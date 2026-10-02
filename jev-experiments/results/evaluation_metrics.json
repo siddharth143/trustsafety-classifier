@@ -1,0 +1,485 @@
+{
+  "cost_latency": {
+    "flash": {
+      "count": 5999,
+      "total_cost_usd": 0.8157481499998462,
+      "cost_per_1k": 0.13598068844804903,
+      "p50_latency_ms": 2781.0704579997036,
+      "p90_latency_ms": 4606.85825019973,
+      "p95_latency_ms": 5243.462945900039,
+      "mean_latency_ms": 3175.7615190103265
+    },
+    "haiku": {
+      "count": 5999,
+      "total_cost_usd": 19.33224399999998,
+      "cost_per_1k": 3.22257776296049,
+      "p50_latency_ms": 4134.3943329993635,
+      "p90_latency_ms": 5231.087216400192,
+      "p95_latency_ms": 5575.363083299632,
+      "mean_latency_ms": 3791.724723460908
+    },
+    "jev": {
+      "count": 6000,
+      "total_cost_usd": 0.255440178,
+      "cost_per_1k": 0.042573363,
+      "p50_latency_ms": 291.3099165002677,
+      "p90_latency_ms": 341.8320829994627,
+      "p95_latency_ms": 370.944516349573,
+      "mean_latency_ms": 305.54644386499723
+    },
+    "sonnet": {
+      "count": 6000,
+      "total_cost_usd": 66.94666499999998,
+      "cost_per_1k": 11.157777499999996,
+      "p50_latency_ms": 2056.871041500017,
+      "p90_latency_ms": 2835.692525000195,
+      "p95_latency_ms": 3126.3389566003298,
+      "mean_latency_ms": 2184.8843046090087
+    }
+  },
+  "ordinal_toxic": {
+    "flash": {
+      "macro_f1": 0.6792290140604654,
+      "macro_precision": 0.6774415744880723,
+      "macro_recall": 0.6906216804156111,
+      "accuracy": 0.7916319386564428,
+      "f1_per_level": [
+        0.9346496106785317,
+        0.6258084385586695,
+        0.477228992944195
+      ]
+    },
+    "haiku": {
+      "macro_f1": 0.6447995408182455,
+      "macro_precision": 0.6434960236880322,
+      "macro_recall": 0.6588753444430281,
+      "accuracy": 0.7631271878646441,
+      "f1_per_level": [
+        0.9201563372417644,
+        0.5780130800373715,
+        0.43622920517560076
+      ]
+    },
+    "jev": {
+      "macro_f1": 0.6354211304694172,
+      "macro_precision": 0.6301660226458428,
+      "macro_recall": 0.7131975602489004,
+      "accuracy": 0.7086666666666667,
+      "f1_per_level": [
+        0.8792195726231031,
+        0.4953299186501958,
+        0.5317139001349528
+      ]
+    },
+    "sonnet": {
+      "macro_f1": 0.6914395427363166,
+      "macro_precision": 0.6982262928056668,
+      "macro_recall": 0.68667843084864,
+      "accuracy": 0.8078333333333333,
+      "f1_per_level": [
+        0.9345539008061211,
+        0.6622872499253508,
+        0.4774774774774775
+      ]
+    }
+  },
+  "operating_points": {
+    "toxic": {
+      "flash": {
+        "recall_constrained": {
+          "threshold": 0.35000000000000003,
+          "precision": 0.9101030927835052,
+          "recall": 0.9030278232405892,
+          "f1": 0.9065516533169029,
+          "tp": 2207,
+          "fp": 218,
+          "fn": 237,
+          "tn": 3337,
+          "fallback": false
+        },
+        "max_f1": {
+          "threshold": 0.17,
+          "precision": 0.8901485535574668,
+          "recall": 0.9316693944353519,
+          "f1": 0.9104358256697321,
+          "tp": 2277,
+          "fp": 281,
+          "fn": 167,
+          "tn": 3274
+        }
+      },
+      "haiku": {
+        "recall_constrained": {
+          "threshold": 0.25,
+          "precision": 0.8622291021671826,
+          "recall": 0.9112474437627812,
+          "f1": 0.886060847086896,
+          "tp": 2228,
+          "fp": 356,
+          "fn": 217,
+          "tn": 3198,
+          "fallback": false
+        },
+        "max_f1": {
+          "threshold": 0.2,
+          "precision": 0.8621089223638471,
+          "recall": 0.912883435582822,
+          "f1": 0.8867699642431466,
+          "tp": 2232,
+          "fp": 357,
+          "fn": 213,
+          "tn": 3197
+        }
+      },
+      "jev": {
+        "recall_constrained": {
+          "threshold": 0.93,
+          "precision": 0.8742562475208251,
+          "recall": 0.9014314928425358,
+          "f1": 0.8876359242851389,
+          "tp": 2204,
+          "fp": 317,
+          "fn": 241,
+          "tn": 3238,
+          "fallback": false
+        },
+        "max_f1": {
+          "threshold": 0.91,
+          "precision": 0.8668994955374466,
+          "recall": 0.9137014314928426,
+          "f1": 0.8896853843090402,
+          "tp": 2234,
+          "fp": 343,
+          "fn": 211,
+          "tn": 3212
+        }
+      },
+      "sonnet": {
+        "recall_constrained": {
+          "threshold": 0.4,
+          "precision": 0.9159456118665018,
+          "recall": 0.90920245398773,
+          "f1": 0.9125615763546798,
+          "tp": 2223,
+          "fp": 204,
+          "fn": 222,
+          "tn": 3351,
+          "fallback": false
+        },
+        "max_f1": {
+          "threshold": 0.3,
+          "precision": 0.9103811841038119,
+          "recall": 0.918200408997955,
+          "f1": 0.9142740785990633,
+          "tp": 2245,
+          "fp": 221,
+          "fn": 200,
+          "tn": 3334
+        }
+      }
+    },
+    "threat": {
+      "flash": {
+        "recall_constrained": {
+          "threshold": 0.02,
+          "precision": 0.48691860465116277,
+          "recall": 0.9571428571428572,
+          "f1": 0.6454720616570327,
+          "tp": 335,
+          "fp": 353,
+          "fn": 15,
+          "tn": 5296,
+          "fallback": false
+        },
+        "max_f1": {
+          "threshold": 0.08,
+          "precision": 0.6457286432160804,
+          "recall": 0.7342857142857143,
+          "f1": 0.6871657754010695,
+          "tp": 257,
+          "fp": 141,
+          "fn": 93,
+          "tn": 5508
+        }
+      },
+      "haiku": {
+        "recall_constrained": {
+          "threshold": 0.05,
+          "precision": 0.2065351418002466,
+          "recall": 0.9571428571428572,
+          "f1": 0.33975659229208927,
+          "tp": 335,
+          "fp": 1287,
+          "fn": 15,
+          "tn": 4362,
+          "fallback": false
+        },
+        "max_f1": {
+          "threshold": 0.25,
+          "precision": 0.6351351351351351,
+          "recall": 0.6714285714285714,
+          "f1": 0.6527777777777778,
+          "tp": 235,
+          "fp": 135,
+          "fn": 115,
+          "tn": 5514
+        }
+      },
+      "jev": {
+        "recall_constrained": {
+          "threshold": 0.05,
+          "precision": 0.21534320323014805,
+          "recall": 0.9142857142857143,
+          "f1": 0.3485838779956427,
+          "tp": 320,
+          "fp": 1166,
+          "fn": 30,
+          "tn": 4484,
+          "fallback": false
+        },
+        "max_f1": {
+          "threshold": 0.66,
+          "precision": 0.6691176470588235,
+          "recall": 0.52,
+          "f1": 0.5852090032154341,
+          "tp": 182,
+          "fp": 90,
+          "fn": 168,
+          "tn": 5560
+        }
+      },
+      "sonnet": {
+        "recall_constrained": {
+          "threshold": 0.01,
+          "precision": 0.08074195308237861,
+          "recall": 0.8457142857142858,
+          "f1": 0.14741035856573706,
+          "tp": 296,
+          "fp": 3370,
+          "fn": 54,
+          "tn": 2280,
+          "fallback": true,
+          "note": "Shortfall: max achievable recall is 0.8457 (< 0.90)"
+        },
+        "max_f1": {
+          "threshold": 0.06999999999999999,
+          "precision": 0.5622489959839357,
+          "recall": 0.8,
+          "f1": 0.660377358490566,
+          "tp": 280,
+          "fp": 218,
+          "fn": 70,
+          "tn": 5432
+        }
+      }
+    },
+    "identity_hate": {
+      "flash": {
+        "recall_constrained": {
+          "threshold": 0.02,
+          "precision": 0.3888888888888889,
+          "recall": 0.9539347408829175,
+          "f1": 0.5525291828793775,
+          "tp": 497,
+          "fp": 781,
+          "fn": 24,
+          "tn": 4697,
+          "fallback": false
+        },
+        "max_f1": {
+          "threshold": 0.17,
+          "precision": 0.5688949522510232,
+          "recall": 0.800383877159309,
+          "f1": 0.6650717703349283,
+          "tp": 417,
+          "fp": 316,
+          "fn": 104,
+          "tn": 5162
+        }
+      },
+      "haiku": {
+        "recall_constrained": {
+          "threshold": 0.05,
+          "precision": 0.3492753623188406,
+          "recall": 0.9251439539347409,
+          "f1": 0.507101525512888,
+          "tp": 482,
+          "fp": 898,
+          "fn": 39,
+          "tn": 4580,
+          "fallback": false
+        },
+        "max_f1": {
+          "threshold": 0.2,
+          "precision": 0.6243654822335025,
+          "recall": 0.708253358925144,
+          "f1": 0.6636690647482014,
+          "tp": 369,
+          "fp": 222,
+          "fn": 152,
+          "tn": 5256
+        }
+      },
+      "jev": {
+        "recall_constrained": {
+          "threshold": 0.17,
+          "precision": 0.4182139699381079,
+          "recall": 0.9078694817658349,
+          "f1": 0.572639225181598,
+          "tp": 473,
+          "fp": 658,
+          "fn": 48,
+          "tn": 4821,
+          "fallback": false
+        },
+        "max_f1": {
+          "threshold": 0.59,
+          "precision": 0.617741935483871,
+          "recall": 0.7351247600767754,
+          "f1": 0.6713409290096407,
+          "tp": 383,
+          "fp": 237,
+          "fn": 138,
+          "tn": 5242
+        }
+      },
+      "sonnet": {
+        "recall_constrained": {
+          "threshold": 0.01,
+          "precision": 0.10602258469259725,
+          "recall": 0.6487523992322457,
+          "f1": 0.18225936910218388,
+          "tp": 338,
+          "fp": 2850,
+          "fn": 183,
+          "tn": 2629,
+          "fallback": true,
+          "note": "Shortfall: max achievable recall is 0.6488 (< 0.90)"
+        },
+        "max_f1": {
+          "threshold": 0.2,
+          "precision": 0.6135831381733021,
+          "recall": 0.5028790786948176,
+          "f1": 0.5527426160337553,
+          "tp": 262,
+          "fp": 165,
+          "fn": 259,
+          "tn": 5314
+        }
+      }
+    }
+  },
+  "calibration": {
+    "toxic": [
+      {
+        "bin_index": 1,
+        "bin_name": "Q1 [0.00-0.69]",
+        "min_confidence": 0.0,
+        "max_confidence": 0.69,
+        "mean_confidence": 0.46091443500979756,
+        "count": 1531,
+        "accuracy": 0.5316786414108425
+      },
+      {
+        "bin_index": 2,
+        "bin_name": "Q2 [0.70-0.93]",
+        "min_confidence": 0.7,
+        "max_confidence": 0.93,
+        "mean_confidence": 0.8307887874837027,
+        "count": 1534,
+        "accuracy": 0.6395045632333768
+      },
+      {
+        "bin_index": 3,
+        "bin_name": "Q3 [0.94-1.00]",
+        "min_confidence": 0.94,
+        "max_confidence": 1.0,
+        "mean_confidence": 0.9880579216354345,
+        "count": 2935,
+        "accuracy": 0.8371379897785349
+      }
+    ],
+    "threat": [
+      {
+        "bin_index": 1,
+        "bin_name": "Q1 [0.00-0.92]",
+        "min_confidence": 0.0,
+        "max_confidence": 0.92,
+        "mean_confidence": 0.7807829181494663,
+        "count": 1967,
+        "accuracy": 0.8474834773767158
+      },
+      {
+        "bin_index": 2,
+        "bin_name": "Q2 [0.94-0.96]",
+        "min_confidence": 0.94,
+        "max_confidence": 0.96,
+        "mean_confidence": 0.9521393034825868,
+        "count": 2211,
+        "accuracy": 0.9959294436906377
+      },
+      {
+        "bin_index": 3,
+        "bin_name": "Q3 [0.98-0.98]",
+        "min_confidence": 0.98,
+        "max_confidence": 0.98,
+        "mean_confidence": 0.9800000000000003,
+        "count": 1821,
+        "accuracy": 1.0
+      },
+      {
+        "bin_index": 4,
+        "bin_name": "Q4 [1.00-1.00]",
+        "min_confidence": 1.0,
+        "max_confidence": 1.0,
+        "mean_confidence": 1.0,
+        "count": 1,
+        "accuracy": 1.0
+      }
+    ],
+    "identity_hate": [
+      {
+        "bin_index": 1,
+        "bin_name": "Q1 [0.00-0.88]",
+        "min_confidence": 0.0,
+        "max_confidence": 0.88,
+        "mean_confidence": 0.6252042740414833,
+        "count": 1591,
+        "accuracy": 0.8013827781269641
+      },
+      {
+        "bin_index": 2,
+        "bin_name": "Q2 [0.90-0.94]",
+        "min_confidence": 0.8999999999999999,
+        "max_confidence": 0.94,
+        "mean_confidence": 0.9275575519371139,
+        "count": 1781,
+        "accuracy": 0.9595732734418866
+      },
+      {
+        "bin_index": 3,
+        "bin_name": "Q3 [0.96-0.96]",
+        "min_confidence": 0.96,
+        "max_confidence": 0.96,
+        "mean_confidence": 0.9600000000000002,
+        "count": 1496,
+        "accuracy": 0.9933155080213903
+      },
+      {
+        "bin_index": 4,
+        "bin_name": "Q4 [0.98-0.98]",
+        "min_confidence": 0.98,
+        "max_confidence": 0.98,
+        "mean_confidence": 0.9800000000000003,
+        "count": 1132,
+        "accuracy": 0.9982332155477032
+      }
+    ]
+  },
+  "plots": [
+    "jev-experiments/results/pr_curve_toxic.png",
+    "jev-experiments/results/pr_curve_threat.png",
+    "jev-experiments/results/pr_curve_identity_hate.png",
+    "jev-experiments/results/calibration_jev.png"
+  ]
+}

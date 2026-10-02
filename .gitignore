@@ -1,0 +1,18 @@
+# Environment & Secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+venv/
+
+# Data and CSV files
+*.csv
+
+# OS files
+.DS_Store
