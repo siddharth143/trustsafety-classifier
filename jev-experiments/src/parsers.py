@@ -198,27 +198,45 @@ def parse_llm_response(
 
     # Robust extraction of toxic probabilities:
     toxic_data = parsed.get("toxic", {}) if isinstance(parsed, dict) else {}
+    if not toxic_data and isinstance(parsed, dict) and "probabilities" in parsed:
+        toxic_data = parsed
+
     if isinstance(toxic_data, dict):
         if "probabilities" in toxic_data and isinstance(toxic_data["probabilities"], dict):
             probs = toxic_data["probabilities"]
         elif any(k in toxic_data for k in ["0", 0, "1", 1, "2", 2]):
             probs = toxic_data
         elif "probability" in toxic_data:
-            p = float(toxic_data["probability"])
+            try:
+                p = float(toxic_data["probability"])
+            except (ValueError, TypeError):
+                p = 0.0
             probs = {"0": max(0.0, 1.0 - p), "1": p, "2": 0.0}
         else:
             probs = toxic_data.get("probabilities", {})
             if not isinstance(probs, dict):
                 probs = {}
-    elif isinstance(toxic_data, (int, float)):
-        p = float(toxic_data)
+    elif isinstance(toxic_data, (int, float, str)):
+        try:
+            p = float(toxic_data)
+        except (ValueError, TypeError):
+            p = 0.0
         probs = {"0": max(0.0, 1.0 - p), "1": p, "2": 0.0}
     else:
         probs = {}
 
-    p0 = float(probs.get("0", probs.get(0, 0.0)))
-    p1 = float(probs.get("1", probs.get(1, 0.0)))
-    p2 = float(probs.get("2", probs.get(2, 0.0)))
+    try:
+        p0 = float(probs.get("0", probs.get(0, 0.0)))
+    except (ValueError, TypeError):
+        p0 = 0.0
+    try:
+        p1 = float(probs.get("1", probs.get(1, 0.0)))
+    except (ValueError, TypeError):
+        p1 = 0.0
+    try:
+        p2 = float(probs.get("2", probs.get(2, 0.0)))
+    except (ValueError, TypeError):
+        p2 = 0.0
 
     # Normalize probabilities to guarantee sum == 1.0 (corrects floating-point drift)
     total_p = p0 + p1 + p2
@@ -247,20 +265,34 @@ def parse_llm_response(
 
     for category in ["threat", "identity_hate"]:
         cat_data = parsed.get(category, {}) if isinstance(parsed, dict) else {}
+        prob_val = 0.0
         if isinstance(cat_data, dict):
-            prob_val = float(
-                cat_data.get(
-                    "probability",
-                    cat_data.get(
-                        "probabilities",
-                        cat_data.get("score", cat_data.get("1", cat_data.get(1, 0.0))),
-                    ),
-                )
-            )
-        elif isinstance(cat_data, (int, float)):
-            prob_val = float(cat_data)
+            raw_p = cat_data.get("probability", cat_data.get("score"))
+            if raw_p is not None:
+                try:
+                    prob_val = float(raw_p)
+                except (ValueError, TypeError):
+                    prob_val = 0.0
+            elif "probabilities" in cat_data and isinstance(cat_data["probabilities"], dict):
+                sub_probs = cat_data["probabilities"]
+                try:
+                    prob_val = float(sub_probs.get("1", sub_probs.get(1, 0.0)))
+                except (ValueError, TypeError):
+                    prob_val = 0.0
+            elif any(k in cat_data for k in ["1", 1]):
+                try:
+                    prob_val = float(cat_data.get("1", cat_data.get(1, 0.0)))
+                except (ValueError, TypeError):
+                    prob_val = 0.0
+        elif isinstance(cat_data, (int, float, str)):
+            try:
+                prob_val = float(cat_data)
+            except (ValueError, TypeError):
+                prob_val = 0.0
         else:
             prob_val = 0.0
+
+        prob_val = max(0.0, min(1.0, prob_val))
 
         answers_rows.append(
             {

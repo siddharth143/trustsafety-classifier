@@ -348,6 +348,34 @@ class TestParseLLMResponse(unittest.TestCase):
         self.assertAlmostEqual(toxic_row2["toxic_prob_0"], 0.75, places=6)
         self.assertAlmostEqual(toxic_row2["toxic_prob_1"], 0.25, places=6)
 
+        # Case 3: string scalar probabilities (reproducing Sonnet tool-use behavior)
+        string_json = {
+            "toxic": {"probabilities": {"0": "0.1", "1": "0.7", "2": "0.2"}},
+            "threat": "0.03",
+            "identity_hate": "0.93",
+        }
+        _, answers_rows3 = parse_llm_response(
+            self.comment_id, self.model_name, string_json, self.latency_ms, self.usage, self.cost_usd, self.raw_response
+        )
+        threat_row3 = next(r for r in answers_rows3 if r["category"] == "threat")
+        self.assertAlmostEqual(threat_row3["binary_probability"], 0.03, places=6)
+        idh_row3 = next(r for r in answers_rows3 if r["category"] == "identity_hate")
+        self.assertAlmostEqual(idh_row3["binary_probability"], 0.93, places=6)
+
+        # Case 4: top-level probabilities omitting "toxic" wrapper key
+        top_level_json = {
+            "probabilities": {"0": 0.05, "1": 0.82, "2": 0.13},
+            "threat": "0.01",
+            "identity_hate": "0.02",
+        }
+        _, answers_rows4 = parse_llm_response(
+            self.comment_id, self.model_name, top_level_json, self.latency_ms, self.usage, self.cost_usd, self.raw_response
+        )
+        toxic_row4 = next(r for r in answers_rows4 if r["category"] == "toxic")
+        self.assertAlmostEqual(toxic_row4["toxic_score"], 1.08, places=6)
+        self.assertAlmostEqual(toxic_row4["toxic_prob_1"], 0.82, places=6)
+
+
 
 class TestPromptsAndDefinitions(unittest.TestCase):
     def test_category_definitions_exist_and_non_empty(self):
