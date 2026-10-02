@@ -422,8 +422,8 @@ class TestAnthropicModelEvaluator(unittest.IsolatedAsyncioTestCase):
         self.assertGreater(calls_row["latency_ms"], 0.0)
         self.assertEqual(calls_row["input_tokens"], 100)
         self.assertEqual(calls_row["output_tokens"], 30)
-        # Haiku pricing: $0.80/MTok input, $4.00/MTok output
-        expected_cost = (100 * 0.80 + 30 * 4.00) / 1_000_000.0
+        # Haiku 4.5 pricing: $1.00/MTok input, $5.00/MTok output
+        expected_cost = (100 * 1.00 + 30 * 5.00) / 1_000_000.0
         self.assertAlmostEqual(calls_row["cost_usd"], expected_cost, places=8)
 
         # Verify messages.create call
@@ -455,8 +455,8 @@ class TestAnthropicModelEvaluator(unittest.IsolatedAsyncioTestCase):
         calls_row, answers_rows = await evaluator.evaluate("c_sonnet_1", "Sonnet comment test")
 
         self.assertEqual(calls_row["model"], "sonnet")
-        # Sonnet pricing: $3.00/MTok input, $15.00/MTok output
-        expected_cost = (100 * 3.00 + 30 * 15.00) / 1_000_000.0
+        # Sonnet 5.5 pricing: $2.00/MTok input, $10.00/MTok output
+        expected_cost = (100 * 2.00 + 30 * 10.00) / 1_000_000.0
         self.assertAlmostEqual(calls_row["cost_usd"], expected_cost, places=8)
 
         _, kwargs = self.mock_client.messages.create.call_args
@@ -532,8 +532,8 @@ class TestGeminiModelEvaluator(unittest.IsolatedAsyncioTestCase):
         self.assertGreater(calls_row["latency_ms"], 0.0)
         self.assertEqual(calls_row["input_tokens"], 130)
         self.assertEqual(calls_row["output_tokens"], 35)
-        # Flash pricing: $0.075/MTok input, $0.30/MTok output
-        expected_cost = (130 * 0.075 + 35 * 0.30) / 1_000_000.0
+        # Flash 3.8 pricing: $0.75/MTok input, $3.75/MTok output
+        expected_cost = (130 * 0.75 + 35 * 3.75) / 1_000_000.0
         self.assertAlmostEqual(calls_row["cost_usd"], expected_cost, places=8)
 
         # Verify generate_content call

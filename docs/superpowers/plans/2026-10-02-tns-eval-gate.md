@@ -20,9 +20,9 @@
 - **Incremental Resumability:** Every completed call is immediately flushed to disk (`calls.csv` and `answers.csv`) so interrupted runs resume without paying for or duplicating completed work.
 - **Provider Pricing Floors:**
   - Jev: $0.042 / MTok input, free output.
-  - Sonnet 5.5: $3.00 / MTok input, $15.00 / MTok output.
-  - Haiku 4.5: $0.80 / MTok input, $4.00 / MTok output.
-  - Gemini Flash 3.8: $0.075 / MTok input, $0.30 / MTok output.
+  - Sonnet 5.5: $2.00 / MTok input, $10.00 / MTok output.
+  - Haiku 4.5: $1.00 / MTok input, $5.00 / MTok output.
+  - Gemini Flash 3.8: $0.75 / MTok input, $3.75 / MTok output.
 
 ---
 

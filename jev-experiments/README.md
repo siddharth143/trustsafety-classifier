@@ -39,7 +39,7 @@ An empirical content moderation benchmark and production-grade evaluation gate c
 Automated Trust & Safety (T&S) classification is a mission-critical component of modern community platforms, agentic guardrails, and user-facing AI pipelines. When deploying moderation filters at scale, system architects encounter a challenging trilemma between **latency**, **operating cost**, and **safety recall**:
 
 1. **Fine-Tuned Classifiers (e.g. BERT/DeBERTa):** Extremely fast and inexpensive, but rigid, prone to drift, require laborious dataset annotation pipelines, and struggle with nuanced linguistic context.
-2. **General-Purpose LLMs (e.g. Claude Sonnet, Gemini Flash):** Highly articulate and context-aware, but introduce prohibitive token-generation latencies (2,000–4,000 ms), high operational costs ($0.14–$11.16 per 1k items), and uncalibrated discrete token probabilities.
+2. **General-Purpose LLMs (e.g. Claude Sonnet, Gemini Flash):** Highly articulate and context-aware, but introduce prohibitive token-generation latencies (2,000–4,000 ms), high operational costs ($1.43–$7.44 per 1k items), and uncalibrated discrete token probabilities.
 3. **Purpose-Built Decision Primitives (TypeSafe Jev):** A specialized "System One" decision model that evaluates content directly via typed primitives (`Score` for graded distributions, `Noul` for binary judgments). Jev returns continuous Bayesian probabilities and native confidence scores without autoregressive text decoding.
 
 ### What This Classifier Does
@@ -182,7 +182,7 @@ The empirical benchmark executed 23,998 individual pointwise evaluations over 6,
 
 ### 2. Proposed Production Architecture for the T&S Classifier (Two-Tier Cascade)
 
-Based on the empirical benchmark results—specifically Jev's ultra-low latency (~291 ms), low cost (\$0.0426/1k), and 0% hard-zero policy misses, combined with Gemini Flash's high threat F1 (0.6455 at $\ge 90\%$ recall, 0.6872 Max-F1)—we propose the **Two-Tier Cascading Model-Router** as the target production architecture for high-volume content moderation:
+Based on the empirical benchmark results—specifically Jev's ultra-low latency (~291 ms), low cost (\$0.0426/1k), and 0% hard-zero policy misses, combined with Gemini Flash's high threat F1 (0.6455 at $\ge 90\%$ recall)—we propose the **Two-Tier Cascading Model-Router** as the target production architecture for high-volume content moderation:
 
 ```text
                                ┌────────────────────────────────────────┐
@@ -211,7 +211,7 @@ Based on the empirical benchmark results—specifically Jev's ultra-low latency 
                      │ (Action/Pass) │                 │ • Deep semantic threat parser │
                      └───────────────┘                 │ • Threat F1: 0.6455 (≥90% rec)│
                                                        │ • Latency: ~2,780 ms          │
-                                                       │ • Cost: $0.1360 / 1k items    │
+                                                       │ • Cost: $1.4271 / 1k items    │
                                                        └───────────────┬───────────────┘
                                                                        ▼
                                                                ┌───────────────┐
@@ -221,7 +221,7 @@ Based on the empirical benchmark results—specifically Jev's ultra-low latency 
 ```
 
 #### Why This Is the Proposed Production Architecture:
-1. **Pareto-Optimal Economics:** Resolving ~75% of volume in Tier 1 reduces the effective system cost to **~$0.066 / 1k items** (a 75% savings vs. standalone Gemini Flash and a 99.4% savings vs. standalone Claude Sonnet).
+1. **Pareto-Optimal Economics:** Resolving ~75% of volume in Tier 1 reduces the effective system cost to **~$0.399 / 1k items** (a 72% savings vs. standalone Gemini Flash and a 94.6% savings vs. standalone Claude Sonnet).
 2. **Sub-Second User Experience:** 75% of users receive an instant moderation decision in under 300 ms, bringing blended average latency below 900 ms.
 3. **Zero Policy Blind Spots & High Recall:** Jev provides continuous Bayesian probability scoring with 0.0% zero-misses on true violations, while Gemini Flash brings deep semantic arbitration for edge cases, yielding an end-to-end cascade with $\ge 90\%$ recall across all moderation categories.
 
@@ -243,9 +243,9 @@ Based on the empirical benchmark results—specifically Jev's ultra-low latency 
 | Model | Cost / 1k Items | Latency p50 | Latency p95 | Toxic Ordinal F1 | Toxic Binary F1* | Threat F1* | Identity Hate F1* |
 |:---|---:|---:|---:|---:|---:|---:|---:|
 | **Jev** (`jev-latest`) | **$0.0426** | **291.3 ms** | **370.9 ms** | 0.6354 | 0.8876 | 0.3486 | 0.5726 |
-| **Gemini Flash 3.8** | $0.1360 | 2,781.1 ms | 5,243.5 ms | 0.6792 | 0.9066 | 0.6455 | 0.5525 |
-| **Claude Haiku 4.5** | $3.2226 | 4,134.4 ms | 5,575.4 ms | 0.6448 | 0.8861 | 0.3401 | 0.5074 |
-| **Claude Sonnet 5.5** | $11.1578 | 2,056.9 ms | 3,126.3 ms | **0.6916** | **0.9128** | **0.6628** | **0.6198** |
+| **Gemini Flash 3.8** | $1.4271 | 2,781.1 ms | 5,243.5 ms | 0.6792 | 0.9066 | 0.6455 | 0.5525 |
+| **Claude Haiku 4.5** | $4.0282 | 4,134.4 ms | 5,575.4 ms | 0.6448 | 0.8861 | 0.3401 | 0.5074 |
+| **Claude Sonnet 5.5** | $7.4385 | 2,056.9 ms | 3,126.3 ms | **0.6916** | **0.9128** | **0.6628** | **0.6198** |
 
 ### Comparative Economics: Cross-Model Cost Benchmark
 
@@ -253,16 +253,16 @@ To evaluate operational sustainability at scale, the table below compares the ec
 
 | Model | Cost / 1k Items | vs. Jev Baseline | vs. Flash Baseline | vs. Sonnet Benchmark (Highest Ceiling) | Projected Cost / 1M Items |
 |:---|---:|:---|:---|:---|---:|
-| **Jev** (`jev-latest`) | **$0.0426** | **1.00x** (Lowest) | **3.19x cheaper** (68.7% savings) | **262.1x cheaper** (99.62% savings) | **$42.57** |
-| **Gemini Flash 3.8** | **$0.1360** | 3.19x higher | **1.00x** (Base LLM) | **82.1x cheaper** (98.78% savings) | **$135.98** |
-| **Claude Haiku 4.5** | **$3.2226** | 75.7x higher | 23.7x higher | **3.46x cheaper** (71.12% savings) | **$3,222.58** |
-| **Claude Sonnet 5.5** | **$11.1578** | 262.1x higher | 82.1x higher | **1.00x** (Highest Benchmark Ceiling) | **$11,157.78** |
+| **Jev** (`jev-latest`) | **$0.0426** | **1.00x** (Lowest) | **33.5x cheaper** (97.0% savings) | **174.7x cheaper** (99.43% savings) | **$42.57** |
+| **Gemini Flash 3.8** | **$1.4271** | 33.5x higher | **1.00x** (Base LLM) | **5.21x cheaper** (80.82% savings) | **$1,427.07** |
+| **Claude Haiku 4.5** | **$4.0282** | 94.6x higher | 2.82x higher | **1.85x cheaper** (45.85% savings) | **$4,028.22** |
+| **Claude Sonnet 5.5** | **$7.4385** | 174.7x higher | 5.21x higher | **1.00x** (Highest Benchmark Ceiling) | **$7,438.52** |
 
 #### Comparative Takeaways:
-1. **Jev vs. Highest Benchmark (Sonnet):** At \$0.0426/1k items, Jev is **262x cheaper than Claude Sonnet 5.5**, offering a **99.62% cost reduction** and 7x lower latency while delivering high-recall moderation (0.8876 toxic F1, 0.5726 hate F1).
-2. **Flash vs. Highest Benchmark (Sonnet):** Gemini Flash 3.8 offers **82x cost savings (98.78% reduction)** compared to Sonnet, while delivering competitive threat detection (0.6455 vs. 0.6628 F1) at a fraction of the cost.
-3. **Jev vs. Flash:** Jev is **3.2x less expensive than Gemini Flash 3.8**, while executing with 9.5x lower p50 latency (291 ms vs. 2,781 ms).
-4. **Haiku Disadvantage:** Claude Haiku 4.5 is **23.7x more expensive than Flash** and **75.7x more expensive than Jev**, despite delivering lower F1 scores across toxicity, threat, and identity hate.
+1. **Jev vs. Highest Benchmark (Sonnet):** At \$0.0426/1k items, Jev is **175x cheaper than Claude Sonnet 5.5**, offering a **99.43% cost reduction** and 7x lower latency while delivering high-recall moderation (0.8876 toxic F1, 0.5726 hate F1).
+2. **Flash vs. Highest Benchmark (Sonnet):** Gemini Flash 3.8 offers **5.2x cost savings (80.82% reduction)** compared to Sonnet, while delivering competitive threat detection (0.6455 vs. 0.6628 F1) at a fraction of the cost.
+3. **Jev vs. Flash:** Jev is **33.5x less expensive than Gemini Flash 3.8**, while executing with 9.5x lower p50 latency (291 ms vs. 2,781 ms).
+4. **Haiku Disadvantage:** Claude Haiku 4.5 is **2.82x more expensive than Flash** and **94.6x more expensive than Jev**, despite delivering lower F1 scores across toxicity, threat, and identity hate.
 
 ### Detailed Cost & Financial Breakdown
 
@@ -270,16 +270,16 @@ The benchmark processed 23,998 individual pointwise evaluations across 6,000 com
 
 | Model | Pricing Rates (per MTok) | Evaluated Calls | Total Spend ($) | Cost / 1k Items | Budget Share (%) |
 |:---|:---|---:|---:|---:|---:|
-| **Jev** (`jev-latest`) | $0.042 input / $0.00 output | 6,000 | **$0.26** | **$0.0426** | **0.29%** |
-| **Gemini Flash 3.8** | $0.075 input / $0.30 output | 5,999 | **$0.82** | **$0.1360** | **0.93%** |
-| **Claude Haiku 4.5** | $0.800 input / $4.00 output | 5,999 | **$19.33** | **$3.2226** | **22.13%** |
-| **Claude Sonnet 5.5** | $3.000 input / $15.00 output | 6,000 | **$66.95** | **$11.1578** | **76.64%** |
-| **Total Benchmark** | — | **23,998** | **$87.35** | — | **100.0%** |
+| **Jev** (`jev-latest`) | $0.042 input / $0.00 output | 6,000 | **$0.26** | **$0.0426** | **0.33%** |
+| **Gemini Flash 3.8** | $0.750 input / $3.75 output | 5,999 | **$8.56** | **$1.4271** | **11.03%** |
+| **Claude Haiku 4.5** | $1.000 input / $5.00 output | 5,999 | **$24.17** | **$4.0282** | **31.14%** |
+| **Claude Sonnet 5.5** | $2.000 input / $10.00 output | 6,000 | **$44.63** | **$7.4385** | **57.50%** |
+| **Total Benchmark** | — | **23,998** | **$77.61** | — | **100.0%** |
 
 #### Key Economic Takeaways:
-- **Jev is ~260x cheaper than Sonnet 5.5 and ~75x cheaper than Haiku 4.5:** Evaluating 6,000 comments on Jev cost just $0.26 total.
-- **Claude Sonnet 5.5 consumed 76.6% of the budget:** While Sonnet delivered top frontier accuracy ($66.95 spend), its $11.16/1k cost and 2.1s p50 latency make it economically unsustainable as a monolithic high-volume gate.
-- **Two-Tier Router Savings:** Gating traffic through Jev Tier 1 (resolving ~75% of volume) and escalating only low-confidence items to Gemini Flash 3.8 Tier 2 yields a blended operational cost of **~$0.066 per 1k items** (a 75% reduction vs. standalone Flash, and a 99.4% reduction vs. standalone Sonnet).
+- **Jev is ~175x cheaper than Sonnet 5.5 and ~95x cheaper than Haiku 4.5:** Evaluating 6,000 comments on Jev cost just $0.26 total.
+- **Claude Sonnet 5.5 consumed 57.5% of the budget:** While Sonnet delivered top frontier accuracy ($44.63 spend), its $7.44/1k cost and 2.1s p50 latency make it economically unsustainable as a monolithic high-volume gate.
+- **Two-Tier Router Savings:** Gating traffic through Jev Tier 1 (resolving ~75% of volume) and escalating only low-confidence items to Gemini Flash 3.8 Tier 2 yields a blended operational cost of **~$0.399 per 1k items** (a 72% reduction vs. standalone Flash, and a 94.6% reduction vs. standalone Sonnet).
 
 ### False Negative Sensitivity & Zero-Miss Robustness
 

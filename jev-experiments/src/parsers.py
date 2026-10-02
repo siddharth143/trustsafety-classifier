@@ -15,23 +15,23 @@ def calculate_cost(model_name: str, input_tokens: int, output_tokens: int) -> fl
 
     Pricing per million tokens (MTok):
     - Jev: $0.042/MTok input, $0 output
-    - Sonnet: $3.00/MTok input, $15.00/MTok output
-    - Haiku: $0.80/MTok input, $4.00/MTok output
-    - Flash: $0.075/MTok input, $0.30/MTok output
+    - Sonnet: $2.00/MTok input, $10.00/MTok output
+    - Haiku: $1.00/MTok input, $5.00/MTok output
+    - Flash: $0.75/MTok input, $3.75/MTok output
     """
     name = model_name.lower().strip()
     if "jev" in name:
         rate_in = 0.042 / 1_000_000.0
         rate_out = 0.0
     elif "sonnet" in name:
-        rate_in = 3.00 / 1_000_000.0
-        rate_out = 15.00 / 1_000_000.0
+        rate_in = 2.00 / 1_000_000.0
+        rate_out = 10.00 / 1_000_000.0
     elif "haiku" in name:
-        rate_in = 0.80 / 1_000_000.0
-        rate_out = 4.00 / 1_000_000.0
+        rate_in = 1.00 / 1_000_000.0
+        rate_out = 5.00 / 1_000_000.0
     elif "flash" in name:
-        rate_in = 0.075 / 1_000_000.0
-        rate_out = 0.30 / 1_000_000.0
+        rate_in = 0.75 / 1_000_000.0
+        rate_out = 3.75 / 1_000_000.0
     else:
         raise ValueError(f"Unknown model name: {model_name}")
 

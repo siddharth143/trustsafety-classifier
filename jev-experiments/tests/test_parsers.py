@@ -76,46 +76,46 @@ class TestCalculateCost(unittest.TestCase):
         self.assertAlmostEqual(cost_partial, 0.021, places=6)
 
     def test_calculate_cost_sonnet(self):
-        # Sonnet: $3.00/MTok input, $15.00/MTok output
+        # Sonnet 5.5: $2.00/MTok input, $10.00/MTok output
         cost_in = calculate_cost("sonnet", 1_000_000, 0)
-        self.assertAlmostEqual(cost_in, 3.00, places=6)
+        self.assertAlmostEqual(cost_in, 2.00, places=6)
 
-        cost_out = calculate_cost("claude-3-5-sonnet", 0, 1_000_000)
-        self.assertAlmostEqual(cost_out, 15.00, places=6)
+        cost_out = calculate_cost("claude-sonnet-5-5", 0, 1_000_000)
+        self.assertAlmostEqual(cost_out, 10.00, places=6)
 
         cost_sonnet_55 = calculate_cost("claude-sonnet-5-5", 1_000_000, 1_000_000)
-        self.assertAlmostEqual(cost_sonnet_55, 18.00, places=6)
+        self.assertAlmostEqual(cost_sonnet_55, 12.00, places=6)
 
-        cost_both = calculate_cost("claude-3-5-sonnet-20241022", 1_000_000, 1_000_000)
-        self.assertAlmostEqual(cost_both, 18.00, places=6)
+        cost_both = calculate_cost("claude-sonnet", 1_000_000, 1_000_000)
+        self.assertAlmostEqual(cost_both, 12.00, places=6)
 
     def test_calculate_cost_haiku(self):
-        # Haiku: $0.80/MTok input, $4.00/MTok output
+        # Haiku 4.5: $1.00/MTok input, $5.00/MTok output
         cost_in = calculate_cost("haiku", 1_000_000, 0)
-        self.assertAlmostEqual(cost_in, 0.80, places=6)
+        self.assertAlmostEqual(cost_in, 1.00, places=6)
 
-        cost_out = calculate_cost("claude-3-5-haiku", 0, 1_000_000)
-        self.assertAlmostEqual(cost_out, 4.00, places=6)
+        cost_out = calculate_cost("claude-haiku-4-5", 0, 1_000_000)
+        self.assertAlmostEqual(cost_out, 5.00, places=6)
 
         cost_haiku_45 = calculate_cost("claude-haiku-4-5", 1_000_000, 1_000_000)
-        self.assertAlmostEqual(cost_haiku_45, 4.80, places=6)
+        self.assertAlmostEqual(cost_haiku_45, 6.00, places=6)
 
-        cost_both = calculate_cost("claude-3-5-haiku-20241022", 1_000_000, 1_000_000)
-        self.assertAlmostEqual(cost_both, 4.80, places=6)
+        cost_both = calculate_cost("claude-haiku", 1_000_000, 1_000_000)
+        self.assertAlmostEqual(cost_both, 6.00, places=6)
 
     def test_calculate_cost_flash(self):
-        # Flash: $0.075/MTok input, $0.30/MTok output
+        # Flash 3.8: $0.75/MTok input, $3.75/MTok output
         cost_in = calculate_cost("flash", 1_000_000, 0)
-        self.assertAlmostEqual(cost_in, 0.075, places=6)
+        self.assertAlmostEqual(cost_in, 0.75, places=6)
 
-        cost_out = calculate_cost("gemini-1.5-flash", 0, 1_000_000)
-        self.assertAlmostEqual(cost_out, 0.30, places=6)
+        cost_out = calculate_cost("gemini-3.8-flash", 0, 1_000_000)
+        self.assertAlmostEqual(cost_out, 3.75, places=6)
 
         cost_flash_38 = calculate_cost("gemini-3.8-flash", 1_000_000, 1_000_000)
-        self.assertAlmostEqual(cost_flash_38, 0.375, places=6)
+        self.assertAlmostEqual(cost_flash_38, 4.50, places=6)
 
-        cost_both = calculate_cost("gemini-1.5-flash-latest", 1_000_000, 1_000_000)
-        self.assertAlmostEqual(cost_both, 0.375, places=6)
+        cost_both = calculate_cost("gemini-flash", 1_000_000, 1_000_000)
+        self.assertAlmostEqual(cost_both, 4.50, places=6)
 
     def test_calculate_cost_unknown_model(self):
         with self.assertRaises(ValueError):
