@@ -11,7 +11,24 @@
 
 *Note: Binary F1 reported at the recall-constrained operating point (≥90% recall target).*
 
-## 2. Operating Points Breakdown
+## 2. Comparative Economics: Cross-Model Cost Benchmark
+
+To evaluate operational sustainability at scale, the table below compares the economics of each model against **TypeSafe Jev** (the lowest-cost decision primitive) and **Gemini 1.5 Flash** (the most cost-effective LLM), using **Claude 3.5 Sonnet** as the highest benchmark reference baseline:
+
+| Model | Cost / 1k Items | vs. Jev Baseline | vs. Flash Baseline | vs. Sonnet Benchmark (Highest Ceiling) | Projected Cost / 1M Items |
+|:---|---:|:---|:---|:---|---:|
+| **Jev** | **$0.0426** | **1.00x** (Lowest) | **3.19x cheaper** (68.7% savings) | **262.1x cheaper** (99.62% savings) | **$42.57** |
+| **Gemini Flash** | **$0.1360** | 3.19x higher | **1.00x** (Base LLM) | **82.1x cheaper** (98.78% savings) | **$135.98** |
+| **Claude Haiku 4.5** | **$3.2226** | 75.7x higher | 23.7x higher | **3.46x cheaper** (71.12% savings) | **$3,222.58** |
+| **Claude Sonnet 5.5** | **$11.1578** | 262.1x higher | 82.1x higher | **1.00x** (Highest Benchmark Ceiling) | **$11,157.78** |
+
+### Key Economic Takeaways:
+1. **Jev vs. Highest Benchmark (Sonnet):** At \$0.0426/1k items, Jev is **262x cheaper than Claude Sonnet**, offering a **99.62% cost reduction** while matching or exceeding Sonnet on safety recall.
+2. **Flash vs. Highest Benchmark (Sonnet):** Gemini Flash offers **82x cost savings (98.78% reduction)** compared to Sonnet, while outperforming Sonnet on threat detection (0.6455 vs. 0.1474 F1).
+3. **Jev vs. Flash:** Jev is **3.2x less expensive than Gemini Flash**, while executing with 9.5x lower p50 latency (291 ms vs. 2,781 ms).
+4. **Haiku Disadvantage:** Claude Haiku is **23.7x more expensive than Flash** and **75.7x more expensive than Jev**, despite delivering lower F1 scores across toxicity, threat, and identity hate.
+
+## 3. Operating Points Breakdown
 
 | Category | Model | Threshold (≥90% Recall) | Precision | Recall | F1 | Max-F1 Threshold | Max-F1 |
 |:---|:---|---:|---:|---:|---:|---:|---:|
@@ -28,7 +45,7 @@
 | identity_hate | jev | 0.17 | 0.4182 | 0.9079 | 0.5726 | 0.59 | 0.6713 |
 | identity_hate | sonnet | 0.01 (shortfall) | 0.1060 | 0.6488 | 0.1823 | 0.20 | 0.5527 |
 
-## 3. Jev Confidence Calibration Check
+## 4. Jev Confidence Calibration Check
 
 | Category | Bin / Quartile | Mean Confidence | Count | Accuracy |
 |:---|:---|---:|---:|---:|
@@ -44,7 +61,7 @@
 | identity_hate | Q3 [0.96-0.96] | 0.9600 | 1496 | 99.33% |
 | identity_hate | Q4 [0.98-0.98] | 0.9800 | 1132 | 99.82% |
 
-## 4. In-Depth Model Performance Analysis
+## 5. In-Depth Model Performance Analysis
 
 ### Jev (TypeSafe System One)
 - **Throughput & Latency:** **291.3 ms p50, 370.9 ms p95** (7x–14x faster than general-purpose LLMs).
@@ -69,7 +86,7 @@
 - **Economics:** **$3.2226 / 1k items** ($19.33 total), 75x more expensive than Jev.
 - **Safety Capabilities:** Moderate performance (Toxic F1: 0.8861, Threat F1: 0.3398, Hate F1: 0.5071). Failed to reach 60% F1 on specific violation categories.
 
-## 5. The 'Hard-Zero' Policy Deficit Analysis
+## 6. The 'Hard-Zero' Policy Deficit Analysis
 
 Discrete token-generation LLMs (especially Sonnet) exhibit severe over-confidence on false negatives, outputting `0.00` probability for subtle harassment:
 | Model | Threats Predicted as 0.0 (Missed) | Identity Hate Predicted as 0.0 (Missed) | Safety Audit Risk |
@@ -79,17 +96,17 @@ Discrete token-generation LLMs (especially Sonnet) exhibit severe over-confidenc
 | **Claude Haiku 4.5** | 15 / 350 (4.3%) | 30 / 521 (5.8%) | Moderate |
 | **Claude Sonnet 5.5** | **54 / 350 (15.4%)** | **182 / 521 (34.9%)** | **Severe (Failed Recall Constraints)** |
 
-## 6. Strategic Architectural Recommendations
+## 7. Proposed Production Architecture for the Trust & Safety Classifier
 
 ### 1. Reject Monolithic LLM Moderation
 - Running Sonnet or Haiku on 100% of comments introduces prohibitive latency (>2-4s) and costs ($3.20-$11.20/1k).
 - Running Sonnet alone fails compliance standards due to its 35% hate-speech blind spot.
 
-### 2. Implement the Two-Tier 'Model-Router' Architecture
+### 2. Implement the Two-Tier Cascade (Proposed Structure)
 By pairing Jev as an instant frontline filter with Gemini Flash as an escalation arbitrator, platforms achieve the optimal Pareto frontier:
 - **Tier 1 (Front Gate - Jev):** Evaluates 100% of inbound comments in ~290 ms at $0.04/1k. Auto-resolves ~75% of clean and unambiguously toxic comments where Jev confidence is high (Toxic ≥ 0.80, Threat/Hate ≥ 0.90).
 - **Tier 2 (Escalation Gate - Gemini Flash):** The remaining ~25% of ambiguous comments are routed to Gemini Flash to leverage its superior threat discernment (0.6872 F1).
-- **Composite Outcome:**
+- **Composite System Outcome:**
   - **Cost:** ~$0.066 / 1k items (75% savings vs. standalone Flash, 99.4% savings vs. standalone Sonnet).
   - **Latency:** ~290 ms for 75% of users; blended average latency <900 ms.
   - **Safety Compliance:** 0 hard-zero blind spots, >90% recall across all three trust & safety categories.

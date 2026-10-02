@@ -13,12 +13,13 @@ An empirical content moderation benchmark and production-grade evaluation gate c
    - [Strict Data Isolation & Privacy](#strict-data-isolation--privacy)
    - [Category Definitions & Considered Rubrics](#category-definitions--considered-rubrics)
 3. [Technical Architecture](#-technical-architecture)
-   - [Pointwise Concurrency Pipeline](#pointwise-concurrency-pipeline)
-   - [Crash-Resilient Atomic Checkpointing](#crash-resilient-atomic-checkpointing)
-   - [Two-Tier Model-Router Architecture](#two-tier-model-router-architecture)
+   - [Benchmark Evaluation Harness Architecture (Empirical Run)](#1-benchmark-evaluation-harness-architecture-empirical-experiment-run)
+   - [Proposed Production Architecture for the T&S Classifier](#2-proposed-production-architecture-for-the-ts-classifier-two-tier-cascade)
 4. [Models, Results & Key Findings](#-models-results--key-findings)
    - [Evaluated Models](#evaluated-models)
    - [Empirical Performance & Cost Summary](#empirical-performance--cost-summary)
+   - [Comparative Economics: Cross-Model Cost Benchmark](#comparative-economics-cross-model-cost-benchmark)
+   - [Detailed Cost & Financial Breakdown](#detailed-cost--financial-breakdown)
    - [The "Hard-Zero" Deficit Finding](#the-hard-zero-deficit-finding)
    - [Jev Confidence Calibration](#jev-confidence-calibration)
    - [Where to Find Results & Visualizations](#where-to-find-results--visualizations)
@@ -101,29 +102,113 @@ All four models evaluated received identical category definitions and prompt ins
 
 ## 🏗️ Technical Architecture
 
+This project encompasses two distinct architectures:
+1. **The Benchmark Evaluation Harness Architecture:** The concurrent offline testing and evaluation harness used to execute the empirical benchmark across all 4 models.
+2. **The Proposed Production Architecture for the T&S Classifier:** The recommended two-tier cascading gate for live platform moderation derived from our empirical findings.
+
+---
+
+### 1. Benchmark Evaluation Harness Architecture (Empirical Experiment Run)
+
+The empirical benchmark executed 23,998 individual pointwise evaluations over 6,000 comments. The harness was architected to evaluate models completely independently and in parallel without shared state:
+
+```text
+               ┌────────────────────────────────────────────────────────┐
+               │    Stratified Input Dataset (Strict Isolation)         │
+               │    `data/eval_6k_prompts.csv` (6,000 comments)          │
+               │    [id, comment_text only — zero ground-truth labels]  │
+               └──────────────────────────┬─────────────────────────────┘
+                                          │
+                                          ▼
+               ┌────────────────────────────────────────────────────────┐
+               │          Async Dispatch & Concurrency Engine           │
+               │          `scripts/run_benchmark.py` (asyncio)          │
+               │     • Pointwise evaluation (1 comment per call)        │
+               │     • Independent resume check via CheckpointManager   │
+               └───────┬──────────────┬──────────────┬──────────────┬───┘
+                       │              │              │              │
+                       ▼              ▼              ▼              ▼
+               ┌──────────────┐┌──────────────┐┌────────────────────────┐
+               │Jev Semaphore ││Gemini Semaph.││  Anthropic Semaphore   │
+               │ (limit: 50)  ││ (limit: 30)  ││      (limit: 15)       │
+               └───────┬──────┘└──────┬───────┘└──────┬──────────┬──────┘
+                       │              │               │          │
+                       ▼              ▼               ▼          ▼
+               ┌──────────────┐┌──────────────┐┌──────────────┐┌──────────────┐
+               │  Jev Model   ││ Gemini Flash ││ Claude Haiku ││Claude Sonnet │
+               │ (Score/Noul) ││ (Structured) ││(Tool Calling)││(Tool Calling)│
+               └───────┬──────┘└──────┬───────┘└──────┬───────┘└──────┬───────┘
+                       │              │               │               │
+                       └──────────────┼───────────────┴───────────────┘
+                                      │
+                                      ▼
+               ┌────────────────────────────────────────────────────────┐
+               │         Resilience & Unified Parsing Layer             │
+               │  • Exponential backoff with jitter (429 / 5xx retries)  │
+               │  • Response normalization & confidence extraction      │
+               │  • Exact token counting & pricing (`src/parsers.py`)   │
+               └──────────────────────────┬─────────────────────────────┘
+                                          │
+                                          ▼
+               ┌────────────────────────────────────────────────────────┐
+               │         Crash-Resilient Atomic Checkpoint Engine       │
+               │              `src/checkpoint.py`                       │
+               │  • Atomic rename: memory buffer -> .tmp -> .csv        │
+               │  • `calls.csv`: latency, token usage, dollar cost      │
+               │  • `answers.csv`: normalized category probabilities    │
+               └──────────────────────────┬─────────────────────────────┘
+                                          │
+                                          ▼
+               ┌────────────────────────────────────────────────────────┐
+               │         Offline Evaluation & Reporting Engine          │
+               │                 `scripts/evaluate.py`                  │
+               │  • Join with `data/eval_6k_ground_truth.csv`           │
+               │  • Threshold sweeps & recall-constrained operating pts │
+               │  • Precision-Recall & Calibration curve generation     │
+               │  • Outputs: `summary.md`, `evaluation_metrics.json`    │
+               └────────────────────────────────────────────────────────┘
+```
+
+#### Key Components of the Evaluation Harness:
+- **Blind Pointwise Isolation:** Each API call processed exactly 1 comment to measure real-world production p50/p95 latency (rather than artificially smoothed batch latency). Prompts were strictly stripped of ground-truth labels.
+- **Provider-Aware Semaphore Rate-Limiting:** Concurrency was strictly throttled per API provider to maximize throughput without triggering rate limits:
+  - **TypeSafe Jev:** `50` concurrent workers.
+  - **Google Gemini (1.5 Flash):** `30` concurrent workers.
+  - **Anthropic Claude (Haiku 3.5 & Sonnet 3.5):** `15` concurrent workers (shared pool).
+- **Automated Fault Resilience:** Model wrappers implement exponential backoff with jitter to gracefully handle transient provider throttling (`429`) or server errors (`5xx`).
+- **Atomic Two-Table Persistence:** Checkpoints committed atomically to `calls.csv` and `answers.csv` on disk per comment, ensuring that if a run was interrupted, re-launching skipped already completed pairs automatically with zero duplicated cost.
+
+---
+
+### 2. Proposed Production Architecture for the T&S Classifier (Two-Tier Cascade)
+
+Based on the empirical benchmark results—specifically Jev's ultra-low latency (~291 ms), low cost (\$0.0426/1k), and 0% hard-zero policy misses, combined with Gemini Flash's high threat F1 (0.6872)—we propose the **Two-Tier Cascading Model-Router** as the target production architecture for high-volume content moderation:
+
 ```text
                                ┌────────────────────────────────────────┐
-                               │  Inbound Comment (1-at-a-time Pointwise)│
+                               │  Inbound Comment Stream (Production)   │
                                └──────────────────┬─────────────────────┘
                                                   │
                                                   ▼
                         ┌──────────────────────────────────────────────────┐
-                        │      Tier 1: High-Speed Gate (TypeSafe Jev)       │
-                        │      • Latency: ~290 ms                          │
+                        │      Tier 1: Frontline Gate (TypeSafe Jev)       │
+                        │      • Evaluates 100% of incoming traffic        │
+                        │      • Latency: ~291 ms p50, 370 ms p95          │
                         │      • Cost: $0.0426 / 1k items                  │
-                        │      • Concurrency: 50 workers                   │
+                        │      • Zero "Hard-Zero" false negative misses    │
                         └─────────────────────────┬────────────────────────┘
                                                   │
                              ┌────────────────────┴────────────────────┐
                              ▼                                         ▼
                  [High Confidence (≥ 0.85)]                [Low Confidence (< 0.85)]
-                 • 75% of total volume                     • 25% ambiguous cases
-                 • Auto-Resolve Instantly                  • Escalate to Tier 2
+                 • ~75% of total volume                    • ~25% ambiguous/borderline
+                 • Clear Clean or Clear Violation          • Escalate to Tier 2
                              │                                         │
                              ▼                                         ▼
                      ┌───────────────┐                 ┌───────────────────────────────┐
                      │ Immediate     │                 │ Tier 2: Escalation Gate       │
                      │ T&S Decision  │                 │ (Gemini 1.5 Flash)            │
+                     │ (Action/Pass) │                 │ • Deep semantic threat parser │
                      └───────────────┘                 │ • Threat F1: 0.6872           │
                                                        │ • Latency: ~2,780 ms          │
                                                        │ • Cost: $0.1360 / 1k items    │
@@ -131,34 +216,14 @@ All four models evaluated received identical category definitions and prompt ins
                                                                        ▼
                                                                ┌───────────────┐
                                                                │ Final T&S     │
-                                                               │ Classification│
+                                                               │ Determination │
                                                                └───────────────┘
 ```
 
-### Pointwise Concurrency Pipeline
-
-In production eval gates, models evaluate items individually rather than in artificial offline batches. To accurately benchmark pointwise latency (p50 and p95), our asynchronous execution engine (`scripts/run_benchmark.py`) queries one comment per API call while managing provider-specific concurrency semaphores:
-- **TypeSafe Jev:** `50` concurrent workers.
-- **Google Gemini (1.5 Flash):** `30` concurrent workers.
-- **Anthropic Claude (Haiku 3.5 & Sonnet 3.5):** `15` concurrent workers (shared account semaphore).
-
-Each client includes exponential backoff with jitter and automated retry handling for rate limits (`429`) and transient server errors (`5xx`).
-
-### Crash-Resilient Atomic Checkpointing
-
-Running 24,000 model evaluations across multiple frontier APIs requires crash resilience:
-- Results are logged into a normalized two-table schema:
-  - `calls.csv`: Stores call metadata, timestamp, model ID, response status, latency (ms), input/output token counts, and exact dollar cost.
-  - `answers.csv`: Stores normalized categorical probabilities (`toxic_0`, `toxic_1`, `toxic_2`, `threat_prob`, `identity_hate_prob`, and native confidence scores).
-- Every completed call writes to an in-memory buffer and commits atomically to disk (`.tmp` write followed by atomic rename).
-- The pipeline supports **seamless resumption**: re-running the benchmark detects completed `(comment_id, model_name)` pairs and skips them automatically.
-
-### Two-Tier Model-Router Architecture
-
-The benchmark demonstrates that pairing Jev with Gemini Flash produces a Pareto-optimal content moderation architecture:
-1. **Tier 1 (Front Gate - Jev):** Evaluates 100% of comments at ~291 ms p50 for \$0.04/1k items. Resolves ~75% of traffic with high confidence.
-2. **Tier 2 (Escalation Gate - Flash):** Processes the ~25% ambiguous cases requiring specialized threat reasoning.
-3. **System Outcome:** Achieves blended latency under 900 ms, \$0.066 / 1k items (75% savings vs. standalone Flash, 99.4% savings vs. Sonnet), and 0% hard-zero blind spots.
+#### Why This Is the Proposed Production Architecture:
+1. **Pareto-Optimal Economics:** Resolving ~75% of volume in Tier 1 reduces the effective system cost to **~$0.066 / 1k items** (a 75% savings vs. standalone Gemini Flash and a 99.4% savings vs. standalone Claude Sonnet).
+2. **Sub-Second User Experience:** 75% of users receive an instant moderation decision in under 300 ms, bringing blended average latency below 900 ms.
+3. **Zero Policy Blind Spots:** Standalone Sonnet misses 34.9% of hate speech and 15.4% of threats by predicting exact `0.00` probability. The proposed cascade maintains **0.0% hard-zero misses** because Tier 1 catches continuous Bayesian probability signals and escalates uncertain cases.
 
 ---
 
@@ -182,7 +247,24 @@ The benchmark demonstrates that pairing Jev with Gemini Flash produces a Pareto-
 | **Claude 3.5 Haiku** | $3.2226 | 4,134.4 ms | 5,575.4 ms | 0.6448 | 0.8861 | 0.3398 | 0.5071 |
 | **Claude 3.5 Sonnet** | $11.1578 | 2,056.9 ms | 3,126.3 ms | **0.6914** | **0.9126** | 0.1474 (shortfall) | 0.1823 (shortfall) |
 
-### Detailed Cost & Economics Breakdown
+### Comparative Economics: Cross-Model Cost Benchmark
+
+To evaluate operational sustainability at scale, the table below compares the economics of each model against **TypeSafe Jev** (the lowest-cost decision primitive) and **Gemini 1.5 Flash** (the workhorse base LLM), using **Claude 3.5 Sonnet** as the highest benchmark reference ceiling:
+
+| Model | Cost / 1k Items | vs. Jev Baseline | vs. Flash Baseline | vs. Sonnet Benchmark (Highest Ceiling) | Projected Cost / 1M Items |
+|:---|---:|:---|:---|:---|---:|
+| **Jev** | **$0.0426** | **1.00x** (Lowest) | **3.19x cheaper** (68.7% savings) | **262.1x cheaper** (99.62% savings) | **$42.57** |
+| **Gemini 1.5 Flash** | **$0.1360** | 3.19x higher | **1.00x** (Base LLM) | **82.1x cheaper** (98.78% savings) | **$135.98** |
+| **Claude 3.5 Haiku** | **$3.2226** | 75.7x higher | 23.7x higher | **3.46x cheaper** (71.12% savings) | **$3,222.58** |
+| **Claude 3.5 Sonnet** | **$11.1578** | 262.1x higher | 82.1x higher | **1.00x** (Highest Benchmark Ceiling) | **$11,157.78** |
+
+#### Comparative Takeaways:
+1. **Jev vs. Highest Benchmark (Sonnet):** At \$0.0426/1k items, Jev is **262x cheaper than Claude Sonnet**, offering a **99.62% cost reduction** while matching or exceeding Sonnet on safety recall.
+2. **Flash vs. Highest Benchmark (Sonnet):** Gemini Flash offers **82x cost savings (98.78% reduction)** compared to Sonnet, while outperforming Sonnet on threat detection (0.6455 vs. 0.1474 F1).
+3. **Jev vs. Flash:** Jev is **3.2x less expensive than Gemini Flash**, while executing with 9.5x lower p50 latency (291 ms vs. 2,781 ms).
+4. **Haiku Disadvantage:** Claude Haiku is **23.7x more expensive than Flash** and **75.7x more expensive than Jev**, despite delivering lower F1 scores across toxicity, threat, and identity hate.
+
+### Detailed Cost & Financial Breakdown
 
 The benchmark processed 23,998 individual pointwise evaluations across 6,000 comments. The table below details the full financial footprint, token pricing rates, total expenditures, and percentage of overall budget:
 
