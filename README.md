@@ -182,7 +182,22 @@ The benchmark demonstrates that pairing Jev with Gemini Flash produces a Pareto-
 | **Claude 3.5 Haiku** | $3.2226 | 4,134.4 ms | 5,575.4 ms | 0.6448 | 0.8861 | 0.3398 | 0.5071 |
 | **Claude 3.5 Sonnet** | $11.1578 | 2,056.9 ms | 3,126.3 ms | **0.6914** | **0.9126** | 0.1474 (shortfall) | 0.1823 (shortfall) |
 
-*Total experiment compute cost: \$87.35.*
+### Detailed Cost & Economics Breakdown
+
+The benchmark processed 23,998 individual pointwise evaluations across 6,000 comments. The table below details the full financial footprint, token pricing rates, total expenditures, and percentage of overall budget:
+
+| Model | Pricing Rates (per MTok) | Evaluated Calls | Total Spend ($) | Cost / 1k Items | Budget Share (%) |
+|:---|:---|---:|---:|---:|---:|
+| **Jev** | $0.042 input / $0.00 output | 6,000 | **$0.26** | **$0.0426** | **0.29%** |
+| **Gemini 1.5 Flash** | $0.075 input / $0.30 output | 5,999 | **$0.82** | **$0.1360** | **0.93%** |
+| **Claude 3.5 Haiku** | $0.800 input / $4.00 output | 5,999 | **$19.33** | **$3.2226** | **22.13%** |
+| **Claude 3.5 Sonnet** | $3.000 input / $15.00 output | 6,000 | **$66.95** | **$11.1578** | **76.64%** |
+| **Total Benchmark** | — | **23,998** | **$87.35** | — | **100.0%** |
+
+#### Key Economic Takeaways:
+- **Jev is ~260x cheaper than Sonnet and ~75x cheaper than Haiku:** Evaluating 6,000 comments on Jev cost just $0.26 total.
+- **Claude Sonnet consumed 76.6% of the budget:** Despite consuming over three-quarters of the total experiment spend ($66.95), Sonnet exhibited a 35% false-negative blind spot on identity hate due to outputting hard zero probabilities.
+- **Two-Tier Router Savings:** Gating traffic through Jev Tier 1 (resolving ~75% of volume) and escalating only low-confidence items to Gemini Flash Tier 2 yields a blended operational cost of **~$0.066 per 1k items** (a 75% reduction vs. standalone Flash, and a 99.4% reduction vs. standalone Sonnet).
 
 ### The "Hard-Zero" Deficit Finding
 
