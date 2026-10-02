@@ -9,7 +9,7 @@
 | **jev** | $0.0426 | 291.3 ms | 370.9 ms | 0.6354 | 0.8876 | 0.3486 | 0.5726 |
 | **sonnet** | $7.4385 | 2056.9 ms | 3126.3 ms | 0.6916 | 0.9128 | 0.6628 | 0.6198 |
 
-*Note: Binary F1 reported at the recall-constrained operating point (≥90% recall target).*
+*Note: Binary F1 reported at the recall-constrained operating point (≥90% recall target). Sonnet scores: In this recall-constrained regime, Sonnet scores 0.6198 on identity hate (threshold 0.05, 90.6% recall) and 0.6628 on threat (threshold 0.05, 92.0% recall). In unconstrained threshold optimization, Sonnet achieves peak Max-F1 of 0.6902 on identity hate (threshold 0.22) and 0.6871 on threat (threshold 0.07).*
 
 ## 2. Comparative Economics: Cross-Model Cost Benchmark
 
@@ -45,21 +45,23 @@ To evaluate operational sustainability at scale, the table below compares the ec
 | identity_hate | jev | 0.17 | 0.4182 | 0.9079 | 0.5726 | 0.59 | 0.6713 |
 | identity_hate | sonnet | 0.05 | 0.4711 | 0.9060 | 0.6198 | 0.22 | 0.6902 |
 
-## 4. Jev Confidence Calibration Check
+## 4. Jev Decision Confidence & Certainty Calibration Check
 
-| Category | Bin / Quartile | Mean Confidence | Count | Accuracy |
-|:---|:---|---:|---:|---:|
-| toxic | Q1 [0.00-0.69] | 0.4609 | 1531 | 53.17% |
-| toxic | Q2 [0.70-0.93] | 0.8308 | 1534 | 63.95% |
-| toxic | Q3 [0.94-1.00] | 0.9881 | 2935 | 83.71% |
-| threat | Q1 [0.00-0.92] | 0.7808 | 1967 | 84.75% |
-| threat | Q2 [0.94-0.96] | 0.9521 | 2211 | 99.59% |
-| threat | Q3 [0.98-0.98] | 0.9800 | 1821 | 100.00% |
-| threat | Q4 [1.00-1.00] | 1.0000 | 1 | 100.00% |
-| identity_hate | Q1 [0.00-0.88] | 0.6252 | 1591 | 80.14% |
-| identity_hate | Q2 [0.90-0.94] | 0.9276 | 1781 | 95.96% |
-| identity_hate | Q3 [0.96-0.96] | 0.9600 | 1496 | 99.33% |
-| identity_hate | Q4 [0.98-0.98] | 0.9800 | 1132 | 99.82% |
+Jev outputs a native confidence score for graded classifications (`Score` / toxic) and a well-calibrated continuous probability for binary judgments (`Noul` / threat & identity hate), from which Bayesian certainty is derived as $2 \times |p - 0.5|$. Calibration analysis demonstrates strong monotonic alignment with empirical accuracy across both native and derived confidence measures:
+
+| Category | Measure Type | Bin / Quartile | Mean Value | Count | Accuracy |
+|:---|:---|:---|---:|---:|---:|
+| toxic | Native Confidence (Score) | Q1 [0.00-0.69] | 0.4609 | 1531 | 53.17% |
+| toxic | Native Confidence (Score) | Q2 [0.70-0.93] | 0.8308 | 1534 | 63.95% |
+| toxic | Native Confidence (Score) | Q3 [0.94-1.00] | 0.9881 | 2935 | 83.71% |
+| threat | Derived Certainty (2*|p-0.5|) | Q1 [0.00-0.92] | 0.7808 | 1967 | 84.75% |
+| threat | Derived Certainty (2*|p-0.5|) | Q2 [0.94-0.96] | 0.9521 | 2211 | 99.59% |
+| threat | Derived Certainty (2*|p-0.5|) | Q3 [0.98-0.98] | 0.9800 | 1821 | 100.00% |
+| threat | Derived Certainty (2*|p-0.5|) | Q4 [1.00-1.00] | 1.0000 | 1 | 100.00% |
+| identity_hate | Derived Certainty (2*|p-0.5|) | Q1 [0.00-0.88] | 0.6252 | 1591 | 80.14% |
+| identity_hate | Derived Certainty (2*|p-0.5|) | Q2 [0.90-0.94] | 0.9276 | 1781 | 95.96% |
+| identity_hate | Derived Certainty (2*|p-0.5|) | Q3 [0.96-0.96] | 0.9600 | 1496 | 99.33% |
+| identity_hate | Derived Certainty (2*|p-0.5|) | Q4 [0.98-0.98] | 0.9800 | 1132 | 99.82% |
 
 ## 5. In-Depth Model Performance Analysis
 
@@ -78,7 +80,7 @@ To evaluate operational sustainability at scale, the table below compares the ec
 ### Claude Sonnet 5.5
 - **Throughput & Latency:** 2,056.9 ms p50, 3,126.3 ms p95.
 - **Economics:** **$7.4385 / 1k items** ($44.63 total), consuming 57.5% of the entire experiment budget ($77.61 total).
-- **Strengths:** Top frontier moderation performance across all categories (Toxic Binary F1 **0.9128**, Threat F1 **0.6628**, Identity Hate F1 **0.6198** at ≥90% recall; **0.6902 Max-F1** on hate and **0.6871 Max-F1** on threat).
+- **Strengths:** Top frontier moderation performance across all categories. In the recall-constrained regime (≥90% recall floor), Sonnet scores **0.9128** on toxic, **0.6628** on threat (threshold 0.05), and **0.6198** on identity hate (threshold 0.05). In unconstrained threshold optimization, Sonnet achieves peak Max-F1 of **0.6871** on threat (threshold 0.07) and **0.6902** on identity hate (threshold 0.22).
 - **Operational Constraint:** High operational cost ($7.44/1k items) and ~2.1s p50 latency make it economically unsustainable as a monolithic high-throughput filter.
 
 ### Claude Haiku 4.5
@@ -86,7 +88,18 @@ To evaluate operational sustainability at scale, the table below compares the ec
 - **Economics:** **$4.0282 / 1k items** ($24.17 total), ~95x more expensive than Jev and 2.8x more expensive than Gemini Flash 3.8.
 - **Safety Capabilities:** Moderate performance (Toxic F1: 0.8861, Threat F1: 0.3401, Hate F1: 0.5074). Failed to reach 60% F1 at ≥90% recall on threat/hate categories.
 
-## 6. False Negative Sensitivity & Zero-Miss Robustness
+## 6. Schema Integrity & Parse Failure Audit
+
+To ensure evaluation robustness and eliminate silent error propagation, all model responses are validated against explicit schema requirements. Any missing category key or unparseable probability is explicitly counted and reported:
+
+| Model | Total Calls | Valid Calls | Schema Errors | Schema Integrity | Audit Details |
+|:---|---:|---:|---:|---:|:---|
+| **flash** | 5,999 | 5,999 | 0 | 100.00% | 100% schema integrity; zero parse failures recorded |
+| **haiku** | 5,999 | 5,997 | 2 | 99.97% | 2 calls with schema failures (4 category-level errors total; omitted required 'threat' schema key; defaulted to 0.0 with warning) |
+| **jev** | 6,000 | 6,000 | 0 | 100.00% | 100% schema integrity; zero parse failures recorded |
+| **sonnet** | 6,000 | 6,000 | 0 | 100.00% | 100% schema integrity; zero parse failures recorded |
+
+## 7. False Negative Sensitivity & Zero-Miss Robustness
 
 Analysis of false negative sensitivity (predictions of exact 0.0 probability for ground-truth violations):
 | Model | Threats Predicted as 0.0 (Missed) | Identity Hate Predicted as 0.0 (Missed) | Audit Risk |
@@ -96,9 +109,10 @@ Analysis of false negative sensitivity (predictions of exact 0.0 probability for
 | **Gemini Flash 3.8** | 1 / 350 (0.3%) | 2 / 521 (0.4%) | Low (High Sensitivity) |
 | **Claude Haiku 4.5** | 14 / 350 (4.0%) | 29 / 521 (5.6%) | Moderate |
 
-*Technical Note: An earlier parser defect defaulted string scalar probabilities (e.g. '0.93') in Claude tool calls to 0.0. With normalized string-to-float parsing, Sonnet exhibits 0 hard-zero misses on ground-truth violations.*
+> **Parser Audit & Score Reconciliation Note:** An earlier evaluation pass observed an apparent shortfall in Claude Sonnet due to a parser defect where string scalar probabilities (e.g. `'0.93'`, `'0.85'`) returned via Claude tool-use were strictly cast into a `dict`-only type branch and defaulted to `0.0`. Upon updating `parsers.py` to robustly cast numeric string scalars, Sonnet demonstrated 0 hard-zero misses on ground-truth violations and achieved an unconstrained peak Max-F1 of **0.6902** on identity hate (threshold 0.22) and **0.6871** on threat (threshold 0.07), alongside its recall-constrained (≥90% recall target) F1 scores of **0.6198** on identity hate and **0.6628** on threat reported in the summary table. Furthermore, silent 0-defaults have been completely removed across all parsers: any missing schema key or unparseable probability is now logged to the module-level failure registry, tagged in answer records with `parse_error=True`, and counted in benchmark health metrics.
 
-## 7. Strategic Architectural Recommendations
+
+## 8. Strategic Architectural Recommendations
 
 ### 1. Reject Monolithic Frontier LLM Moderation
 - While Sonnet 5.5 delivers high accuracy, deploying it monolithically across 100% of comments incurs unsustainable latency (2.1s p50) and cost ($7,439 / 1M comments).

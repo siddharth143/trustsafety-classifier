@@ -40,7 +40,7 @@ Automated Trust & Safety (T&S) classification is a mission-critical component of
 
 1. **Fine-Tuned Classifiers (e.g. BERT/DeBERTa):** Extremely fast and inexpensive, but rigid, prone to drift, require laborious dataset annotation pipelines, and struggle with nuanced linguistic context.
 2. **General-Purpose LLMs (e.g. Claude Sonnet, Gemini Flash):** Highly articulate and context-aware, but introduce prohibitive token-generation latencies (2,000–4,000 ms), high operational costs ($1.43–$7.44 per 1k items), and uncalibrated discrete token probabilities.
-3. **Purpose-Built Decision Primitives (TypeSafe Jev):** A specialized "System One" decision model that evaluates content directly via typed primitives (`Score` for graded distributions, `Noul` for binary judgments). Jev returns continuous Bayesian probabilities and native confidence scores without autoregressive text decoding.
+3. **Purpose-Built Decision Primitives (TypeSafe Jev):** A specialized "System One" decision model that evaluates content directly via typed primitives (`Score` for graded distributions, `Noul` for binary judgments). Jev returns continuous Bayesian probabilities alongside native confidence scores for graded classifications (`Score`) and derived decision certainty for binary judgments (`Noul`), without autoregressive text decoding.
 
 ### What This Classifier Does
 
@@ -231,7 +231,7 @@ Based on the empirical benchmark results—specifically Jev's ultra-low latency 
 
 ### Evaluated Models
 
-1. **Jev (`jev-latest`):** TypeSafe System One decision primitive utilizing `Score` and `Noul`.
+1. **Jev (`jev-latest`):** TypeSafe System One decision primitive utilizing `Score` (with native confidence) and `Noul` (with derived Bayesian certainty: $2 \times |p - 0.5|$).
 2. **Gemini Flash 3.8 (`gemini-3.8-flash`):** Google's high-speed, cost-optimized frontier model.
 3. **Claude Sonnet 5.5 (`claude-sonnet-5-5`):** Anthropic's flagship model evaluated via tool-calling structured output.
 4. **Claude Haiku 4.5 (`claude-haiku-4-5`):** Anthropic's high-speed model evaluated via tool-calling structured output.
@@ -292,23 +292,36 @@ Analysis of false negative sensitivity (predictions of exact 0.0 probability for
 | **Gemini Flash 3.8** | 1 / 350 (0.3%) | 2 / 521 (0.4%) | Low (High Sensitivity) |
 | **Claude Haiku 4.5** | 14 / 350 (4.0%) | 29 / 521 (5.6%) | Moderate |
 
-> **Parser Audit Note:** An earlier evaluation pass observed an apparent shortfall in Claude Sonnet due to a parser defect where string scalar probabilities (e.g. `"0.93"`, `"0.85"`) returned via Claude tool-use were strictly cast into a `dict`-only type branch and defaulted to `0.0`. Upon updating `parsers.py` to robustly cast numeric string scalars, Sonnet demonstrated 0 hard-zero misses and achieved a class-leading F1 of 0.6902 on identity hate and 0.6871 on threat. Both Jev and Sonnet successfully avoid policy blindness on true violations.
+> **Parser Audit & Score Reconciliation Note:** An earlier evaluation pass observed an apparent shortfall in Claude Sonnet due to a parser defect where string scalar probabilities (e.g. `"0.93"`, `"0.85"`) returned via Claude tool-use were strictly cast into a `dict`-only type branch and defaulted to `0.0`. Upon updating `parsers.py` to robustly cast numeric string scalars, Sonnet demonstrated 0 hard-zero misses on ground-truth violations and achieved an unconstrained peak Max-F1 of **0.6902** on identity hate (threshold 0.22) and **0.6871** on threat (threshold 0.07), alongside its recall-constrained ($\ge 90\%$ recall target) F1 scores of **0.6198** on identity hate and **0.6628** on threat reported in the summary table. Furthermore, silent 0-defaults have been completely removed across all parsers: any missing schema key or unparseable probability is now logged to the module-level failure registry, tagged in answer records with `parse_error=True`, and counted in benchmark health metrics.
 
-### Jev Confidence Calibration
+### Schema Integrity & Parse Failure Audit
 
-Jev outputs a native confidence score alongside each decision. Calibration analysis demonstrates strong monotonic alignment with empirical accuracy:
+To ensure benchmark reliability and eliminate silent error propagation, all model responses are validated against explicit schema requirements. Any missing category key or unparseable probability is explicitly counted and reported:
 
-| Category | Confidence Quartile | Mean Confidence | Item Count | Empirical Accuracy |
-|:---|:---|---:|---:|---:|
-| **Toxic** | Q1 [0.00 – 0.69] | 0.4609 | 1,531 | 53.17% |
-| **Toxic** | Q2 [0.70 – 0.93] | 0.8308 | 1,534 | 63.95% |
-| **Toxic** | Q3 [0.94 – 1.00] | 0.9881 | 2,935 | **83.71%** |
-| **Threat** | Q1 [0.00 – 0.92] | 0.7808 | 1,967 | 84.75% |
-| **Threat** | Q2 [0.94 – 0.96] | 0.9521 | 2,211 | 99.59% |
-| **Threat** | Q3 [0.98 – 0.98] | 0.9800 | 1,821 | **100.00%** |
-| **Identity Hate**| Q1 [0.00 – 0.88] | 0.6252 | 1,591 | 80.14% |
-| **Identity Hate**| Q2 [0.90 – 0.94] | 0.9276 | 1,781 | 95.96% |
-| **Identity Hate**| Q3 [0.96 – 0.96] | 0.9600 | 1,496 | **99.33%** |
+| Model | Total Calls | Valid Calls | Schema Errors | Schema Integrity | Audit Details |
+|:---|---:|---:|---:|---:|:---|
+| **Jev** (`jev-latest`) | 6,000 | 6,000 | 0 | **100.00%** | Zero parse failures across all decision primitives. |
+| **Gemini Flash 3.8** | 5,999 | 5,999 | 0 | **100.00%** | 100% schema integrity via structured JSON schema enforcement. |
+| **Claude Sonnet 5.5** | 6,000 | 6,000 | 0 | **100.00%** | 100% schema integrity with normalized string scalar casting. |
+| **Claude Haiku 4.5** | 5,999 | 5,997 | 2 | **99.97%** | 2 calls omitted required 'threat' schema key (`2edeaa3725e35abc`, `971724e599334e90`); safely defaulted to 0.0 with warning. Neither was a ground-truth violation (GT=0). |
+
+### Jev Decision Confidence & Certainty Calibration
+
+Jev outputs a native confidence score for graded classifications (`Score` / toxic) and a well-calibrated continuous probability for binary judgments (`Noul` / threat & identity hate), from which Bayesian certainty is derived as $2 \times |p - 0.5|$. Calibration analysis demonstrates strong monotonic alignment with empirical accuracy across both native and derived confidence measures:
+
+| Category | Measure Type | Confidence / Certainty Quartile | Mean Value | Item Count | Empirical Accuracy |
+|:---|:---|:---|---:|---:|---:|
+| **Toxic** | Native Confidence (`Score`) | Q1 [0.00 – 0.69] | 0.4609 | 1,531 | 53.17% |
+| **Toxic** | Native Confidence (`Score`) | Q2 [0.70 – 0.93] | 0.8308 | 1,534 | 63.95% |
+| **Toxic** | Native Confidence (`Score`) | Q3 [0.94 – 1.00] | 0.9881 | 2,935 | **83.71%** |
+| **Threat** | Derived Certainty ($2\|p - 0.5\|$) | Q1 [0.00 – 0.92] | 0.7808 | 1,967 | 84.75% |
+| **Threat** | Derived Certainty ($2\|p - 0.5\|$) | Q2 [0.94 – 0.96] | 0.9521 | 2,211 | 99.59% |
+| **Threat** | Derived Certainty ($2\|p - 0.5\|$) | Q3 [0.98 – 0.98] | 0.9800 | 1,821 | **100.00%** |
+| **Threat** | Derived Certainty ($2\|p - 0.5\|$) | Q4 [1.00 – 1.00] | 1.0000 | 1 | **100.00%** |
+| **Identity Hate**| Derived Certainty ($2\|p - 0.5\|$) | Q1 [0.00 – 0.88] | 0.6252 | 1,591 | 80.14% |
+| **Identity Hate**| Derived Certainty ($2\|p - 0.5\|$) | Q2 [0.90 – 0.94] | 0.9276 | 1,781 | 95.96% |
+| **Identity Hate**| Derived Certainty ($2\|p - 0.5\|$) | Q3 [0.96 – 0.96] | 0.9600 | 1,496 | 99.33% |
+| **Identity Hate**| Derived Certainty ($2\|p - 0.5\|$) | Q4 [0.98 – 0.98] | 0.9800 | 1,132 | **99.82%** |
 
 ### Where to Find Results & Visualizations
 

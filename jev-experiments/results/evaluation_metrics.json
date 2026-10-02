@@ -474,6 +474,40 @@
       }
     ]
   },
+  "parse_health": {
+    "flash": {
+      "total_calls": 5999,
+      "failed_calls": 0,
+      "valid_calls": 5999,
+      "category_parse_errors": 0,
+      "schema_integrity_pct": 100.0,
+      "notes": "100% schema integrity; zero parse failures recorded"
+    },
+    "haiku": {
+      "total_calls": 5999,
+      "failed_calls": 2,
+      "valid_calls": 5997,
+      "category_parse_errors": 4,
+      "schema_integrity_pct": 99.9667,
+      "notes": "2 calls with schema failures (4 category-level errors total; omitted required 'threat' schema key; defaulted to 0.0 with warning)"
+    },
+    "jev": {
+      "total_calls": 6000,
+      "failed_calls": 0,
+      "valid_calls": 6000,
+      "category_parse_errors": 0,
+      "schema_integrity_pct": 100.0,
+      "notes": "100% schema integrity; zero parse failures recorded"
+    },
+    "sonnet": {
+      "total_calls": 6000,
+      "failed_calls": 0,
+      "valid_calls": 6000,
+      "category_parse_errors": 0,
+      "schema_integrity_pct": 100.0,
+      "notes": "100% schema integrity; zero parse failures recorded"
+    }
+  },
   "plots": [
     "jev-experiments/results/pr_curve_toxic.png",
     "jev-experiments/results/pr_curve_threat.png",

@@ -11,7 +11,16 @@ for p in [str(_ROOT / "src"), str(_ROOT / "scripts")]:
     if p not in sys.path:
         sys.path.insert(0, p)
 
-from parsers import calculate_cost, parse_jev_response, parse_llm_response
+from parsers import (
+    calculate_cost,
+    get_parse_failure_details,
+    get_parse_failures,
+    parse_jev_response,
+    parse_llm_response,
+    record_parse_failure,
+    reset_parse_failures,
+    total_parse_failures,
+)
 from prompts import (
     CLAUDE_CLASSIFICATION_TOOL,
     GEMINI_RESPONSE_SCHEMA,
@@ -447,5 +456,162 @@ class TestPromptsAndDefinitions(unittest.TestCase):
         self.assertIn("identity_hate", gemini_props)
 
 
+class TestParseFailureTracking(unittest.TestCase):
+    def setUp(self):
+        reset_parse_failures()
+        self.comment_id = "test_comment_parse_err"
+        self.latency_ms = 120.0
+        self.usage = MockUsage(input_tokens=100, output_tokens=50)
+        self.cost_usd = 0.0001
+        self.raw_response = {"mock": "response"}
+
+    def tearDown(self):
+        reset_parse_failures()
+
+    def test_registry_lifecycle(self):
+        self.assertEqual(total_parse_failures(), 0)
+        record_parse_failure("haiku", "c1", "threat", None, "Missing threat key")
+        record_parse_failure("haiku", "c2", "threat", None, "Missing threat key")
+        record_parse_failure("flash", "c3", "toxic", "invalid", "Malformed toxic")
+
+        failures = get_parse_failures()
+        self.assertEqual(failures["haiku"]["threat"], 2)
+        self.assertEqual(failures["flash"]["toxic"], 1)
+        self.assertEqual(total_parse_failures("haiku"), 2)
+        self.assertEqual(total_parse_failures("flash"), 1)
+        self.assertEqual(total_parse_failures(), 3)
+
+        details = get_parse_failure_details()
+        self.assertEqual(len(details), 3)
+        self.assertEqual(details[0]["comment_id"], "c1")
+
+        reset_parse_failures()
+        self.assertEqual(total_parse_failures(), 0)
+        self.assertEqual(len(get_parse_failure_details()), 0)
+
+    def test_missing_threat_key_haiku_reproduction(self):
+        # Reproduce the 2 Haiku calls where "threat" key was omitted
+        parsed_json = {
+            "toxic": {"probabilities": {"0": 0.9, "1": 0.1, "2": 0.0}},
+            "identity_hate": {"probability": 0.01},
+        }
+
+        calls_row, answers_rows = parse_llm_response(
+            self.comment_id,
+            "haiku",
+            parsed_json,
+            self.latency_ms,
+            self.usage,
+            self.cost_usd,
+            self.raw_response,
+        )
+
+        self.assertEqual(calls_row["parse_failures"], 1)
+        self.assertEqual(total_parse_failures("haiku"), 1)
+
+        threat_row = next(r for r in answers_rows if r["category"] == "threat")
+        self.assertTrue(threat_row["parse_error"])
+        self.assertEqual(threat_row["binary_probability"], 0.0)
+
+        toxic_row = next(r for r in answers_rows if r["category"] == "toxic")
+        self.assertFalse(toxic_row["parse_error"])
+
+        hate_row = next(r for r in answers_rows if r["category"] == "identity_hate")
+        self.assertFalse(hate_row["parse_error"])
+
+    def test_missing_toxic_key(self):
+        parsed_json = {
+            "threat": {"probability": 0.02},
+            "identity_hate": {"probability": 0.01},
+        }
+
+        calls_row, answers_rows = parse_llm_response(
+            self.comment_id,
+            "sonnet",
+            parsed_json,
+            self.latency_ms,
+            self.usage,
+            self.cost_usd,
+            self.raw_response,
+        )
+
+        self.assertEqual(calls_row["parse_failures"], 1)
+        toxic_row = next(r for r in answers_rows if r["category"] == "toxic")
+        self.assertTrue(toxic_row["parse_error"])
+        self.assertEqual(toxic_row["toxic_prob_0"], 1.0)
+        self.assertEqual(toxic_row["toxic_score"], 0.0)
+
+    def test_malformed_json_string(self):
+        calls_row, answers_rows = parse_llm_response(
+            self.comment_id,
+            "flash",
+            "{bad json...",
+            self.latency_ms,
+            self.usage,
+            self.cost_usd,
+            self.raw_response,
+        )
+
+        self.assertEqual(calls_row["parse_failures"], 3)
+        for r in answers_rows:
+            self.assertTrue(r["parse_error"])
+
+    def test_unparseable_probability_scalar(self):
+        parsed_json = {
+            "toxic": {"probabilities": {"0": 0.8, "1": 0.2, "2": 0.0}},
+            "threat": {"probability": "not_a_float"},
+            "identity_hate": {"probability": 0.02},
+        }
+
+        calls_row, answers_rows = parse_llm_response(
+            self.comment_id,
+            "sonnet",
+            parsed_json,
+            self.latency_ms,
+            self.usage,
+            self.cost_usd,
+            self.raw_response,
+        )
+
+        self.assertEqual(calls_row["parse_failures"], 1)
+        threat_row = next(r for r in answers_rows if r["category"] == "threat")
+        self.assertTrue(threat_row["parse_error"])
+        self.assertEqual(threat_row["binary_probability"], 0.0)
+
+    def test_jev_missing_answers_field(self):
+        empty_response = {"status": "error"}
+        calls_row, answers_rows = parse_jev_response(
+            self.comment_id,
+            empty_response,
+            self.latency_ms,
+            self.usage,
+            self.cost_usd,
+        )
+
+        self.assertEqual(calls_row["parse_failures"], 3)
+        for r in answers_rows:
+            self.assertTrue(r["parse_error"])
+
+    def test_valid_responses_have_zero_parse_failures(self):
+        parsed_json = {
+            "toxic": {"probabilities": {"0": 0.8, "1": 0.15, "2": 0.05}},
+            "threat": {"probability": 0.02},
+            "identity_hate": {"probability": 0.01},
+        }
+        calls_row, answers_rows = parse_llm_response(
+            self.comment_id,
+            "sonnet",
+            parsed_json,
+            self.latency_ms,
+            self.usage,
+            self.cost_usd,
+            self.raw_response,
+        )
+        self.assertEqual(calls_row["parse_failures"], 0)
+        for r in answers_rows:
+            self.assertFalse(r["parse_error"])
+
+
 if __name__ == "__main__":
     unittest.main()
+
