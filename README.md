@@ -1,4 +1,4 @@
-# Trust & Safety Eval Gate: Jev vs. LLMs Benchmark
+# Trust & Safety Classifier (Eval Gate): Jev vs. LLMs Benchmark
 
 An empirical content moderation benchmark and production-grade evaluation gate comparing **TypeSafe Jev** (System One decision primitive) against frontier general-purpose LLMs (**Claude 3.5 Sonnet**, **Gemini 1.5 Flash**, and **Claude 3.5 Haiku**) on a stratified 6,000-comment dataset.
 
