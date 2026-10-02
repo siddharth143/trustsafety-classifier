@@ -13,12 +13,12 @@
 
 ## 2. Comparative Economics: Cross-Model Cost Benchmark
 
-To evaluate operational sustainability at scale, the table below compares the economics of each model against **TypeSafe Jev** (the lowest-cost decision primitive) and **Gemini 1.5 Flash** (the most cost-effective LLM), using **Claude 3.5 Sonnet** as the highest benchmark reference baseline:
+To evaluate operational sustainability at scale, the table below compares the economics of each model against **TypeSafe Jev** (`jev-latest`) and **Gemini Flash 3.8** (`gemini-3.8-flash`), using **Claude Sonnet 5.5** (`claude-sonnet-5-5`) as the highest benchmark reference baseline:
 
 | Model | Cost / 1k Items | vs. Jev Baseline | vs. Flash Baseline | vs. Sonnet Benchmark (Highest Ceiling) | Projected Cost / 1M Items |
 |:---|---:|:---|:---|:---|---:|
-| **Jev** | **$0.0426** | **1.00x** (Lowest) | **3.19x cheaper** (68.7% savings) | **262.1x cheaper** (99.62% savings) | **$42.57** |
-| **Gemini Flash** | **$0.1360** | 3.19x higher | **1.00x** (Base LLM) | **82.1x cheaper** (98.78% savings) | **$135.98** |
+| **Jev** (`jev-latest`) | **$0.0426** | **1.00x** (Lowest) | **3.19x cheaper** (68.7% savings) | **262.1x cheaper** (99.62% savings) | **$42.57** |
+| **Gemini Flash 3.8** | **$0.1360** | 3.19x higher | **1.00x** (Base LLM) | **82.1x cheaper** (98.78% savings) | **$135.98** |
 | **Claude Haiku 4.5** | **$3.2226** | 75.7x higher | 23.7x higher | **3.46x cheaper** (71.12% savings) | **$3,222.58** |
 | **Claude Sonnet 5.5** | **$11.1578** | 262.1x higher | 82.1x higher | **1.00x** (Highest Benchmark Ceiling) | **$11,157.78** |
 

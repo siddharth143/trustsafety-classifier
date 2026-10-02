@@ -23,9 +23,9 @@ def get_model_evaluator(model_name: str, **kwargs: Any) -> BaseModelEvaluator:
 
     Supported model names:
     - 'jev' / 'jev-latest' -> JevModelEvaluator
-    - 'haiku' / 'claude-3-5-haiku' -> AnthropicModelEvaluator (haiku)
-    - 'sonnet' / 'claude-3-5-sonnet' -> AnthropicModelEvaluator (sonnet)
-    - 'flash' / 'gemini-1.5-flash' / 'gemini-2.0-flash' -> GeminiModelEvaluator
+    - 'haiku' / 'claude-haiku-4-5' / 'claude-3-5-haiku' -> AnthropicModelEvaluator (haiku)
+    - 'sonnet' / 'claude-sonnet-5-5' / 'claude-3-5-sonnet' -> AnthropicModelEvaluator (sonnet)
+    - 'flash' / 'gemini-3.8-flash' / 'gemini-1.5-flash' -> GeminiModelEvaluator
     """
     name = model_name.lower().strip()
     if "jev" in name:

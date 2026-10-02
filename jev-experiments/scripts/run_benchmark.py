@@ -1,7 +1,7 @@
 """Full asynchronous benchmark runner for Trust & Safety Eval Gate Benchmark.
 
-Orchestrates 6,000 comments across 4 models (Jev, Claude 3.5 Haiku,
-Gemini 1.5 Flash, Claude 3.5 Sonnet) with provider-specific semaphores,
+Orchestrates 6,000 comments across 4 models (Jev, Claude Haiku 4.5,
+Gemini Flash 3.8, Claude Sonnet 5.5) with provider-specific semaphores,
 incremental checkpointing, resumption, real-time progress updates,
 and graceful signal handling.
 """

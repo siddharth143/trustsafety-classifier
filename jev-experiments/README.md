@@ -1,6 +1,6 @@
 # Trust & Safety Eval Gate: Jev vs. LLMs Benchmark
 
-An empirical content moderation benchmark and production-grade evaluation gate comparing **TypeSafe Jev** (System One decision primitive) against frontier general-purpose LLMs (**Claude 3.5 Sonnet**, **Gemini 1.5 Flash**, and **Claude 3.5 Haiku**) on a stratified 6,000-comment dataset.
+An empirical content moderation benchmark and production-grade evaluation gate comparing **TypeSafe Jev** (System One decision primitive) against frontier general-purpose LLMs (**Claude Sonnet 5.5**, **Gemini Flash 3.8**, and **Claude Haiku 4.5**) on a stratified 6,000-comment dataset.
 
 ---
 
@@ -173,8 +173,8 @@ The empirical benchmark executed 23,998 individual pointwise evaluations over 6,
 - **Blind Pointwise Isolation:** Each API call processed exactly 1 comment to measure real-world production p50/p95 latency (rather than artificially smoothed batch latency). Prompts were strictly stripped of ground-truth labels.
 - **Provider-Aware Semaphore Rate-Limiting:** Concurrency was strictly throttled per API provider to maximize throughput without triggering rate limits:
   - **TypeSafe Jev:** `50` concurrent workers.
-  - **Google Gemini (1.5 Flash):** `30` concurrent workers.
-  - **Anthropic Claude (Haiku 3.5 & Sonnet 3.5):** `15` concurrent workers (shared pool).
+  - **Google Gemini (Gemini Flash 3.8):** `30` concurrent workers.
+  - **Anthropic Claude (Haiku 4.5 & Sonnet 5.5):** `15` concurrent workers (shared pool).
 - **Automated Fault Resilience:** Model wrappers implement exponential backoff with jitter to gracefully handle transient provider throttling (`429`) or server errors (`5xx`).
 - **Atomic Two-Table Persistence:** Checkpoints committed atomically to `calls.csv` and `answers.csv` on disk per comment, ensuring that if a run was interrupted, re-launching skipped already completed pairs automatically with zero duplicated cost.
 
@@ -207,7 +207,7 @@ Based on the empirical benchmark results—specifically Jev's ultra-low latency 
                              ▼                                         ▼
                      ┌───────────────┐                 ┌───────────────────────────────┐
                      │ Immediate     │                 │ Tier 2: Escalation Gate       │
-                     │ T&S Decision  │                 │ (Gemini 1.5 Flash)            │
+                     │ T&S Decision  │                 │ (Gemini Flash 3.8)            │
                      │ (Action/Pass) │                 │ • Deep semantic threat parser │
                      └───────────────┘                 │ • Threat F1: 0.6872           │
                                                        │ • Latency: ~2,780 ms          │
@@ -232,9 +232,9 @@ Based on the empirical benchmark results—specifically Jev's ultra-low latency 
 ### Evaluated Models
 
 1. **Jev (`jev-latest`):** TypeSafe System One decision primitive utilizing `Score` and `Noul`.
-2. **Gemini 1.5 Flash (`gemini-1.5-flash` / `gemini-3.8-flash`):** Google's high-speed, cost-optimized frontier model.
-3. **Claude 3.5 Sonnet (`claude-3-5-sonnet-latest`):** Anthropic's flagship model evaluated via tool-calling structured output.
-4. **Claude 3.5 Haiku (`claude-3-5-haiku-latest`):** Anthropic's high-speed model evaluated via tool-calling structured output.
+2. **Gemini Flash 3.8 (`gemini-3.8-flash`):** Google's high-speed, cost-optimized frontier model.
+3. **Claude Sonnet 5.5 (`claude-sonnet-5-5`):** Anthropic's flagship model evaluated via tool-calling structured output.
+4. **Claude Haiku 4.5 (`claude-haiku-4-5`):** Anthropic's high-speed model evaluated via tool-calling structured output.
 
 ### Empirical Performance & Cost Summary
 
@@ -242,27 +242,27 @@ Based on the empirical benchmark results—specifically Jev's ultra-low latency 
 
 | Model | Cost / 1k Items | Latency p50 | Latency p95 | Toxic Ordinal F1 | Toxic Binary F1* | Threat F1* | Identity Hate F1* |
 |:---|---:|---:|---:|---:|---:|---:|---:|
-| **Jev** | **$0.0426** | **291.3 ms** | **370.9 ms** | 0.6354 | 0.8876 | 0.3486 | **0.5726** |
-| **Gemini 1.5 Flash** | $0.1360 | 2,781.1 ms | 5,243.5 ms | 0.6792 | 0.9066 | **0.6455** | 0.5525 |
-| **Claude 3.5 Haiku** | $3.2226 | 4,134.4 ms | 5,575.4 ms | 0.6448 | 0.8861 | 0.3398 | 0.5071 |
-| **Claude 3.5 Sonnet** | $11.1578 | 2,056.9 ms | 3,126.3 ms | **0.6914** | **0.9126** | 0.1474 (shortfall) | 0.1823 (shortfall) |
+| **Jev** (`jev-latest`) | **$0.0426** | **291.3 ms** | **370.9 ms** | 0.6354 | 0.8876 | 0.3486 | **0.5726** |
+| **Gemini Flash 3.8** | $0.1360 | 2,781.1 ms | 5,243.5 ms | 0.6792 | 0.9066 | **0.6455** | 0.5525 |
+| **Claude Haiku 4.5** | $3.2226 | 4,134.4 ms | 5,575.4 ms | 0.6448 | 0.8861 | 0.3398 | 0.5071 |
+| **Claude Sonnet 5.5** | $11.1578 | 2,056.9 ms | 3,126.3 ms | **0.6914** | **0.9126** | 0.1474 (shortfall) | 0.1823 (shortfall) |
 
 ### Comparative Economics: Cross-Model Cost Benchmark
 
-To evaluate operational sustainability at scale, the table below compares the economics of each model against **TypeSafe Jev** (the lowest-cost decision primitive) and **Gemini 1.5 Flash** (the workhorse base LLM), using **Claude 3.5 Sonnet** as the highest benchmark reference ceiling:
+To evaluate operational sustainability at scale, the table below compares the economics of each model against **TypeSafe Jev** (`jev-latest`) and **Gemini Flash 3.8** (`gemini-3.8-flash`), using **Claude Sonnet 5.5** (`claude-sonnet-5-5`) as the highest benchmark reference ceiling:
 
 | Model | Cost / 1k Items | vs. Jev Baseline | vs. Flash Baseline | vs. Sonnet Benchmark (Highest Ceiling) | Projected Cost / 1M Items |
 |:---|---:|:---|:---|:---|---:|
-| **Jev** | **$0.0426** | **1.00x** (Lowest) | **3.19x cheaper** (68.7% savings) | **262.1x cheaper** (99.62% savings) | **$42.57** |
-| **Gemini Flash** | **$0.1360** | 3.19x higher | **1.00x** (Base LLM) | **82.1x cheaper** (98.78% savings) | **$135.98** |
+| **Jev** (`jev-latest`) | **$0.0426** | **1.00x** (Lowest) | **3.19x cheaper** (68.7% savings) | **262.1x cheaper** (99.62% savings) | **$42.57** |
+| **Gemini Flash 3.8** | **$0.1360** | 3.19x higher | **1.00x** (Base LLM) | **82.1x cheaper** (98.78% savings) | **$135.98** |
 | **Claude Haiku 4.5** | **$3.2226** | 75.7x higher | 23.7x higher | **3.46x cheaper** (71.12% savings) | **$3,222.58** |
 | **Claude Sonnet 5.5** | **$11.1578** | 262.1x higher | 82.1x higher | **1.00x** (Highest Benchmark Ceiling) | **$11,157.78** |
 
 #### Comparative Takeaways:
-1. **Jev vs. Highest Benchmark (Sonnet):** At \$0.0426/1k items, Jev is **262x cheaper than Claude Sonnet**, offering a **99.62% cost reduction** while matching or exceeding Sonnet on safety recall.
-2. **Flash vs. Highest Benchmark (Sonnet):** Gemini Flash offers **82x cost savings (98.78% reduction)** compared to Sonnet, while outperforming Sonnet on threat detection (0.6455 vs. 0.1474 F1).
-3. **Jev vs. Flash:** Jev is **3.2x less expensive than Gemini Flash**, while executing with 9.5x lower p50 latency (291 ms vs. 2,781 ms).
-4. **Haiku Disadvantage:** Claude Haiku is **23.7x more expensive than Flash** and **75.7x more expensive than Jev**, despite delivering lower F1 scores across toxicity, threat, and identity hate.
+1. **Jev vs. Highest Benchmark (Sonnet):** At \$0.0426/1k items, Jev is **262x cheaper than Claude Sonnet 5.5**, offering a **99.62% cost reduction** while matching or exceeding Sonnet on safety recall.
+2. **Flash vs. Highest Benchmark (Sonnet):** Gemini Flash 3.8 offers **82x cost savings (98.78% reduction)** compared to Sonnet, while outperforming Sonnet on threat detection (0.6455 vs. 0.1474 F1).
+3. **Jev vs. Flash:** Jev is **3.2x less expensive than Gemini Flash 3.8**, while executing with 9.5x lower p50 latency (291 ms vs. 2,781 ms).
+4. **Haiku Disadvantage:** Claude Haiku 4.5 is **23.7x more expensive than Flash** and **75.7x more expensive than Jev**, despite delivering lower F1 scores across toxicity, threat, and identity hate.
 
 ### Detailed Cost & Financial Breakdown
 
@@ -270,16 +270,16 @@ The benchmark processed 23,998 individual pointwise evaluations across 6,000 com
 
 | Model | Pricing Rates (per MTok) | Evaluated Calls | Total Spend ($) | Cost / 1k Items | Budget Share (%) |
 |:---|:---|---:|---:|---:|---:|
-| **Jev** | $0.042 input / $0.00 output | 6,000 | **$0.26** | **$0.0426** | **0.29%** |
-| **Gemini 1.5 Flash** | $0.075 input / $0.30 output | 5,999 | **$0.82** | **$0.1360** | **0.93%** |
-| **Claude 3.5 Haiku** | $0.800 input / $4.00 output | 5,999 | **$19.33** | **$3.2226** | **22.13%** |
-| **Claude 3.5 Sonnet** | $3.000 input / $15.00 output | 6,000 | **$66.95** | **$11.1578** | **76.64%** |
+| **Jev** (`jev-latest`) | $0.042 input / $0.00 output | 6,000 | **$0.26** | **$0.0426** | **0.29%** |
+| **Gemini Flash 3.8** | $0.075 input / $0.30 output | 5,999 | **$0.82** | **$0.1360** | **0.93%** |
+| **Claude Haiku 4.5** | $0.800 input / $4.00 output | 5,999 | **$19.33** | **$3.2226** | **22.13%** |
+| **Claude Sonnet 5.5** | $3.000 input / $15.00 output | 6,000 | **$66.95** | **$11.1578** | **76.64%** |
 | **Total Benchmark** | — | **23,998** | **$87.35** | — | **100.0%** |
 
 #### Key Economic Takeaways:
-- **Jev is ~260x cheaper than Sonnet and ~75x cheaper than Haiku:** Evaluating 6,000 comments on Jev cost just $0.26 total.
-- **Claude Sonnet consumed 76.6% of the budget:** Despite consuming over three-quarters of the total experiment spend ($66.95), Sonnet exhibited a 35% false-negative blind spot on identity hate due to outputting hard zero probabilities.
-- **Two-Tier Router Savings:** Gating traffic through Jev Tier 1 (resolving ~75% of volume) and escalating only low-confidence items to Gemini Flash Tier 2 yields a blended operational cost of **~$0.066 per 1k items** (a 75% reduction vs. standalone Flash, and a 99.4% reduction vs. standalone Sonnet).
+- **Jev is ~260x cheaper than Sonnet 5.5 and ~75x cheaper than Haiku 4.5:** Evaluating 6,000 comments on Jev cost just $0.26 total.
+- **Claude Sonnet 5.5 consumed 76.6% of the budget:** Despite consuming over three-quarters of the total experiment spend ($66.95), Sonnet exhibited a 35% false-negative blind spot on identity hate due to outputting hard zero probabilities.
+- **Two-Tier Router Savings:** Gating traffic through Jev Tier 1 (resolving ~75% of volume) and escalating only low-confidence items to Gemini Flash 3.8 Tier 2 yields a blended operational cost of **~$0.066 per 1k items** (a 75% reduction vs. standalone Flash, and a 99.4% reduction vs. standalone Sonnet).
 
 ### The "Hard-Zero" Deficit Finding
 
@@ -287,10 +287,10 @@ A critical discovery of this benchmark is the **"Hard-Zero" Failure Mode** in di
 
 | Model | Threats Predicted as Exact 0.0 | Identity Hate Predicted as Exact 0.0 | Compliance Risk |
 |:---|---:|---:|:---|
-| **Jev** | **0 / 350 (0.0%)** | **0 / 521 (0.0%)** | **Minimal (Continuous Bayesian Scoring)** |
-| **Gemini 1.5 Flash** | 1 / 350 (0.3%) | 2 / 521 (0.4%) | Low (High Sensitivity) |
-| **Claude 3.5 Haiku** | 15 / 350 (4.3%) | 30 / 521 (5.8%) | Moderate |
-| **Claude 3.5 Sonnet** | **54 / 350 (15.4%)** | **182 / 521 (34.9%)** | **Severe (Failed Recall Constraints)** |
+| **Jev** (`jev-latest`) | **0 / 350 (0.0%)** | **0 / 521 (0.0%)** | **Minimal (Continuous Bayesian Scoring)** |
+| **Gemini Flash 3.8** | 1 / 350 (0.3%) | 2 / 521 (0.4%) | Low (High Sensitivity) |
+| **Claude Haiku 4.5** | 15 / 350 (4.3%) | 30 / 521 (5.8%) | Moderate |
+| **Claude Sonnet 5.5** | **54 / 350 (15.4%)** | **182 / 521 (34.9%)** | **Severe (Failed Recall Constraints)** |
 
 When prompted for probability distributions, Claude Sonnet frequently predicted exact `0.00` for comments containing implicit slurs or oblique threats. Because these violations were assigned a probability of absolute zero, **no threshold sweep could ever recover them**, causing Sonnet to cap out at 84.6% maximum recall on threats and 64.9% maximum recall on identity hate.
 

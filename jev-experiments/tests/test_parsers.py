@@ -83,6 +83,9 @@ class TestCalculateCost(unittest.TestCase):
         cost_out = calculate_cost("claude-3-5-sonnet", 0, 1_000_000)
         self.assertAlmostEqual(cost_out, 15.00, places=6)
 
+        cost_sonnet_55 = calculate_cost("claude-sonnet-5-5", 1_000_000, 1_000_000)
+        self.assertAlmostEqual(cost_sonnet_55, 18.00, places=6)
+
         cost_both = calculate_cost("claude-3-5-sonnet-20241022", 1_000_000, 1_000_000)
         self.assertAlmostEqual(cost_both, 18.00, places=6)
 
@@ -94,6 +97,9 @@ class TestCalculateCost(unittest.TestCase):
         cost_out = calculate_cost("claude-3-5-haiku", 0, 1_000_000)
         self.assertAlmostEqual(cost_out, 4.00, places=6)
 
+        cost_haiku_45 = calculate_cost("claude-haiku-4-5", 1_000_000, 1_000_000)
+        self.assertAlmostEqual(cost_haiku_45, 4.80, places=6)
+
         cost_both = calculate_cost("claude-3-5-haiku-20241022", 1_000_000, 1_000_000)
         self.assertAlmostEqual(cost_both, 4.80, places=6)
 
@@ -104,6 +110,9 @@ class TestCalculateCost(unittest.TestCase):
 
         cost_out = calculate_cost("gemini-1.5-flash", 0, 1_000_000)
         self.assertAlmostEqual(cost_out, 0.30, places=6)
+
+        cost_flash_38 = calculate_cost("gemini-3.8-flash", 1_000_000, 1_000_000)
+        self.assertAlmostEqual(cost_flash_38, 0.375, places=6)
 
         cost_both = calculate_cost("gemini-1.5-flash-latest", 1_000_000, 1_000_000)
         self.assertAlmostEqual(cost_both, 0.375, places=6)

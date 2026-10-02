@@ -1,6 +1,6 @@
 # Trust & Safety Eval Gate Benchmark Implementation Plan
 
-**Goal:** Build a high-throughput, asynchronous evaluation benchmark comparing Jev against general-purpose LLMs (Claude 3.5 Haiku, Claude 3.5 Sonnet, and Gemini 1.5 Flash) on a 6,000-comment Trust & Safety content moderation task with incremental checkpointing and post-run analysis.
+**Goal:** Build a high-throughput, asynchronous evaluation benchmark comparing Jev against general-purpose LLMs (Claude Haiku 4.5, Claude Sonnet 5.5, and Gemini Flash 3.8) on a 6,000-comment Trust & Safety content moderation task with incremental checkpointing and post-run analysis.
 
 **Architecture:** A modular Python execution pipeline using `asyncio` with provider-specific semaphores to run 1-comment-per-call evaluations concurrently. Model outputs are parsed into a normalized two-table schema (`calls.csv` and `answers.csv`) checkpointed per comment. Analysis joins predictions with an isolated ground-truth file to compute Precision-Recall curves (recall-constrained operating points) and Jev-specific confidence calibration.
 
@@ -18,9 +18,9 @@
 - **Incremental Resumability:** Every completed call is immediately flushed to disk (`calls.csv` and `answers.csv`) so interrupted runs resume without paying for or duplicating completed work.
 - **Provider Pricing Floors:**
   - Jev: $0.042 / MTok input, free output.
-  - Sonnet 3.5: $3.00 / MTok input, $15.00 / MTok output.
-  - Haiku 3.5: $0.80 / MTok input, $4.00 / MTok output.
-  - Gemini 1.5 Flash: $0.075 / MTok input, $0.30 / MTok output.
+  - Sonnet 5.5: $3.00 / MTok input, $15.00 / MTok output.
+  - Haiku 4.5: $0.80 / MTok input, $4.00 / MTok output.
+  - Gemini Flash 3.8: $0.075 / MTok input, $0.30 / MTok output.
 
 ---
 
