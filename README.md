@@ -182,7 +182,7 @@ The empirical benchmark executed 23,998 individual pointwise evaluations over 6,
 
 ### 2. Proposed Production Architecture for the T&S Classifier (Two-Tier Cascade)
 
-Based on the empirical benchmark results—specifically Jev's ultra-low latency (~291 ms), low cost (\$0.0426/1k), and 0% hard-zero policy misses, combined with Gemini Flash's high threat F1 (0.6872)—we propose the **Two-Tier Cascading Model-Router** as the target production architecture for high-volume content moderation:
+Based on the empirical benchmark results—specifically Jev's ultra-low latency (~291 ms), low cost (\$0.0426/1k), and 0% hard-zero policy misses, combined with Gemini Flash's high threat F1 (0.6455 at $\ge 90\%$ recall, 0.6872 Max-F1)—we propose the **Two-Tier Cascading Model-Router** as the target production architecture for high-volume content moderation:
 
 ```text
                                ┌────────────────────────────────────────┐
@@ -209,7 +209,7 @@ Based on the empirical benchmark results—specifically Jev's ultra-low latency 
                      │ Immediate     │                 │ Tier 2: Escalation Gate       │
                      │ T&S Decision  │                 │ (Gemini Flash 3.8)            │
                      │ (Action/Pass) │                 │ • Deep semantic threat parser │
-                     └───────────────┘                 │ • Threat F1: 0.6872           │
+                     └───────────────┘                 │ • Threat F1: 0.6455 (≥90% rec)│
                                                        │ • Latency: ~2,780 ms          │
                                                        │ • Cost: $0.1360 / 1k items    │
                                                        └───────────────┬───────────────┘
