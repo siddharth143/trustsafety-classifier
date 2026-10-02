@@ -1,7 +1,7 @@
 # PRD: Domain-Agnostic Model Router — Jev vs. LLM-as-Router
 
 **Status:** Draft
-**Owner:** Siddharth
+**Owner:** Core Team
 **Type:** Experiment / research spike, not a shipped feature
 **Target output:** Open-sourceable router library + write-up of findings
 

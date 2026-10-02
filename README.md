@@ -217,59 +217,63 @@ Jev outputs a native confidence score alongside each decision. Calibration analy
 
 ### Where to Find Results & Visualizations
 
-All metrics, generated plots, and detailed reports are stored in `results/`:
-- **Full Markdown Report:** [`results/summary.md`](results/summary.md)
-- **Machine-Readable Metrics:** [`results/evaluation_metrics.json`](results/evaluation_metrics.json)
+All metrics, generated plots, and detailed reports are stored in `jev-experiments/results/`:
+- **Full Markdown Report:** [`jev-experiments/results/summary.md`](jev-experiments/results/summary.md)
+- **Machine-Readable Metrics:** [`jev-experiments/results/evaluation_metrics.json`](jev-experiments/results/evaluation_metrics.json)
 - **Precision-Recall Curves:**
-  - Toxicity PR Curve: `results/pr_curve_toxic.png`
-  - Threat PR Curve: `results/pr_curve_threat.png`
-  - Identity Hate PR Curve: `results/pr_curve_identity_hate.png`
+  - Toxicity PR Curve: `jev-experiments/results/pr_curve_toxic.png`
+  - Threat PR Curve: `jev-experiments/results/pr_curve_threat.png`
+  - Identity Hate PR Curve: `jev-experiments/results/pr_curve_identity_hate.png`
 - **Reliability Diagram:**
-  - Jev Confidence Calibration: `results/calibration_jev.png`
+  - Jev Confidence Calibration: `jev-experiments/results/calibration_jev.png`
 
 ---
 
 ## 📁 Repository Structure
 
 ```text
-jev-experiments/
-├── requirements.txt               # Pinned Python package dependencies
-├── docs/                          # PRDs and execution specifications
-│   ├── PRD-tns-eval-gate.md       # Content moderation gate PRD
-│   ├── PRD-model-router.md        # Two-tier model router PRD
-│   ├── PLAN.md                    # Benchmark execution plan
-│   └── EXECUTION.md               # Detailed technical spec
-├── data/                          # Stratified datasets (strict isolation)
-│   ├── eval_6k_prompts.csv        # 6,000 comments (id, comment_text only)
-│   └── eval_6k_ground_truth.csv   # 6,000 labels (id, ground-truth only)
-├── src/                           # Core modular library
-│   ├── checkpoint.py              # Atomic CSV manager & crash recovery
-│   ├── prompts.py                 # Unified rubrics & model schemas
-│   ├── parsers.py                 # Normalizers, pricing & token counters
-│   └── models/                    # Asynchronous model clients
-│       ├── base.py                # Abstract base model interface
-│       ├── jev_model.py           # TypeSafe Jev client
-│       ├── anthropic_model.py     # Claude Haiku & Sonnet client
-│       └── gemini_model.py        # Gemini Flash client
-├── scripts/                       # CLI execution scripts
-│   ├── stratify_dataset.py        # Deterministic dataset sampler
-│   ├── run_pilot.py               # 50-item dry-run sanity check
-│   ├── run_benchmark.py           # Full 6,000-item async benchmark runner
-│   └── evaluate.py                # Metrics, PR curves & summary generator
-├── results/                       # Generated evaluation outputs & figures
-│   ├── summary.md                 # Full executive benchmark report
-│   ├── evaluation_metrics.json    # Machine-readable evaluation metrics
-│   ├── pr_curve_toxic.png         # Precision-Recall curve: Toxicity
-│   ├── pr_curve_threat.png        # Precision-Recall curve: Threat
-│   ├── pr_curve_identity_hate.png # Precision-Recall curve: Identity Hate
-│   └── calibration_jev.png        # Jev confidence reliability curve
-└── tests/                         # Full unit and integration test suite
-    ├── test_stratify.py
-    ├── test_checkpoint.py
-    ├── test_parsers.py
-    ├── test_models.py
-    ├── test_runners.py
-    └── test_evaluate.py
+.
+├── README.md                          # Comprehensive project documentation
+├── .env.example                       # Template for API credentials
+├── docs/                              # Project planning documents
+└── jev-experiments/
+    ├── requirements.txt               # Pinned Python package dependencies
+    ├── docs/                          # PRDs and execution specifications
+    │   ├── PRD-tns-eval-gate.md       # Content moderation gate PRD
+    │   ├── PRD-model-router.md        # Two-tier model router PRD
+    │   ├── PLAN.md                    # Benchmark execution plan
+    │   └── EXECUTION.md               # Detailed technical spec
+    ├── data/                          # Stratified datasets (strict isolation)
+    │   ├── eval_6k_prompts.csv        # 6,000 comments (id, comment_text only)
+    │   └── eval_6k_ground_truth.csv   # 6,000 labels (id, ground-truth only)
+    ├── src/                           # Core modular library
+    │   ├── checkpoint.py              # Atomic CSV manager & crash recovery
+    │   ├── prompts.py                 # Unified rubrics & model schemas
+    │   ├── parsers.py                 # Normalizers, pricing & token counters
+    │   └── models/                    # Asynchronous model clients
+    │       ├── base.py                # Abstract base model interface
+    │       ├── jev_model.py           # TypeSafe Jev client
+    │       ├── anthropic_model.py     # Claude Haiku & Sonnet client
+    │       └── gemini_model.py        # Gemini Flash client
+    ├── scripts/                       # CLI execution scripts
+    │   ├── stratify_dataset.py        # Deterministic dataset sampler
+    │   ├── run_pilot.py               # 50-item dry-run sanity check
+    │   ├── run_benchmark.py           # Full 6,000-item async benchmark runner
+    │   └── evaluate.py                # Metrics, PR curves & summary generator
+    ├── results/                       # Generated evaluation outputs & figures
+    │   ├── summary.md                 # Full executive benchmark report
+    │   ├── evaluation_metrics.json    # Machine-readable evaluation metrics
+    │   ├── pr_curve_toxic.png         # Precision-Recall curve: Toxicity
+    │   ├── pr_curve_threat.png        # Precision-Recall curve: Threat
+    │   ├── pr_curve_identity_hate.png # Precision-Recall curve: Identity Hate
+    │   └── calibration_jev.png        # Jev confidence reliability curve
+    └── tests/                         # Full unit and integration test suite
+        ├── test_stratify.py
+        ├── test_checkpoint.py
+        ├── test_parsers.py
+        ├── test_models.py
+        ├── test_runners.py
+        └── test_evaluate.py
 ```
 
 ---
@@ -278,7 +282,7 @@ jev-experiments/
 
 ### 1. Environment Setup
 
-From the repository root:
+Clone the repository and install dependencies in a Python $\ge 3.10$ virtual environment:
 
 ```bash
 python -m venv .venv
@@ -286,7 +290,11 @@ source .venv/bin/activate
 pip install -r jev-experiments/requirements.txt
 ```
 
-Set your API credentials in `.env` (using `.env.example` as a reference):
+Copy `.env.example` to `.env` and provide your API keys:
+
+```bash
+cp .env.example .env
+```
 
 ```bash
 TYPESAFE_API_KEY="your_typesafe_api_key_here"

@@ -1,7 +1,7 @@
 # PRD: Trust & Safety Eval Gate — Jev vs. Haiku/Sonnet/Flash
 
 **Status:** Draft
-**Owner:** Siddharth
+**Owner:** Core Team
 **Type:** Experiment / benchmark, not a shipped feature
 **Target output:** Benchmark report (accuracy, cost, latency) comparing Jev to general-purpose LLMs on content moderation
 

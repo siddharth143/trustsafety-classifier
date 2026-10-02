@@ -8,7 +8,7 @@
 
 **Tech Stack:** Python 3.9+, `asyncio`, TypeSafe Python SDK (`typesafe-sdk`), Anthropic SDK (`anthropic`), Google GenAI SDK (`google-genai`), `python-dotenv`, `matplotlib`, `scikit-learn`.
 
-**Spec:** [`jev-experiments/PRD-tns-eval-gate.md`](file:///Users/siddharth/Desktop/Traviz/jev-experiments/PRD-tns-eval-gate.md) and [`jev-experiments/EXECUTION.md`](file:///Users/siddharth/Desktop/Traviz/jev-experiments/EXECUTION.md)
+**Spec:** [`jev-experiments/docs/PRD-tns-eval-gate.md`](../../jev-experiments/docs/PRD-tns-eval-gate.md) and [`jev-experiments/docs/EXECUTION.md`](../../jev-experiments/docs/EXECUTION.md)
 
 ---
 
